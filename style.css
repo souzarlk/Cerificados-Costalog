@@ -21,6 +21,7 @@ button { cursor:pointer; }
 .login-screen::before { content:""; position:absolute; width:620px; height:620px; border-radius:50%; right:-240px; top:-250px; background:rgba(227,6,19,.16); filter:blur(4px); }
 .login-brand { position:absolute; top:34px; left:42px; width:210px; }
 .login-brand img { display:block; width:100%; height:auto; aspect-ratio:auto; object-fit:contain; }
+.login-brand img { filter: brightness(0) invert(1); }
 .login-card { width:min(460px,100%); background:#fff; border-radius:22px; padding:42px; box-shadow:0 30px 90px rgba(0,0,0,.42); position:relative; z-index:1; }
 .eyebrow { font-size:11px; letter-spacing:.18em; font-weight:800; color:#777; }
 .eyebrow.red { color:var(--red); }
@@ -40,7 +41,7 @@ button { cursor:pointer; }
 .topbar { background:var(--black); color:#fff; position:sticky; top:0; z-index:10; box-shadow:0 5px 25px rgba(0,0,0,.15); }
 .topbar-inner { max-width:1200px; margin:auto; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; gap:20px; }
 .brand-lockup { display:flex; align-items:center; gap:14px; }
-.brand-lockup img { display:block; width:145px; height:auto; aspect-ratio:auto; object-fit:contain; flex:0 0 auto; }
+.brand-lockup img { display:block; width:145px; height:auto; aspect-ratio:auto; object-fit:contain; flex:0 0 auto; filter:brightness(0) invert(1); }
 .brand-lockup strong { display:block; font-size:15px; }
 .brand-lockup span { display:block; color:#aaa; font-size:11px; margin-top:2px; }
 .top-actions { display:flex; gap:10px; align-items:center; }
