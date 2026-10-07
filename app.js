@@ -6,7 +6,7 @@ const SESSION_KEY="costalog_role";
 const $=s=>document.querySelector(s);
 const loginScreen=$("#loginScreen"), app=$("#app"), loginForm=$("#loginForm"), passwordInput=$("#accessPassword"), togglePassword=$("#togglePassword"), loginError=$("#loginError");
 const certificateGrid=$("#certificateGrid"), emptyState=$("#emptyState"), certificateCount=$("#certificateCount"), validCount=$("#validCount"), expiringCount=$("#expiringCount"), expiredCount=$("#expiredCount"), searchInput=$("#searchInput"), statusFilter=$("#statusFilter");
-const modal=$("#adminModal"), certificateForm=$("#certificateForm"), saveError=$("#saveError"), modalTitle=$("#modalTitle"), modalSubtitle=$("#modalSubtitle"), certFile=$("#certFile"), fileRequiredLabel=$("#fileRequiredLabel"), fileHelp=$("#fileHelp"), issueDateDisplay=$("#issueDateDisplay"), expiryDateDisplay=$("#expiryDateDisplay"), certIdentityDisplay=$("#certIdentityDisplay");
+const modal=$("#adminModal"), certificateForm=$("#certificateForm"), saveError=$("#saveError"), modalTitle=$("#modalTitle"), modalSubtitle=$("#modalSubtitle"), certFile=$("#certFile"), fileRequiredLabel=$("#fileRequiredLabel"), fileHelp=$("#fileHelp"), issueDateDisplay=$("#issueDateDisplay"), expiryDateDisplay=$("#expiryDateDisplay");
 const roleBadge=$("#roleBadge"), accessLevel=$("#accessLevel");
 let currentRole=sessionStorage.getItem(SESSION_KEY)||null, editingId=null, certificates=loadCertificates();
 
@@ -18,7 +18,7 @@ function daysUntil(v){const t=new Date;t.setHours(0,0,0,0);const d=new Date(v+"T
 function getStatus(c){const d=daysUntil(c.expiryDate);if(d<0)return{key:"expired",label:"Expirado"};if(d<=30)return{key:"expiring",label:"Vence em breve"};return{key:"valid",label:"Válido"}}
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function isoDate(date){return String(date.getUTCFullYear()).padStart(4,"0")+"-"+String(date.getUTCMonth()+1).padStart(2,"0")+"-"+String(date.getUTCDate()).padStart(2,"0")}
-function resetAutoDates(){issueDateDisplay.textContent="Automática pelo certificado";expiryDateDisplay.textContent="Automática pelo certificado";issueDateDisplay.classList.remove("detected");expiryDateDisplay.classList.remove("detected");if(certIdentityDisplay){certIdentityDisplay.textContent="Automático pelo certificado";certIdentityDisplay.classList.remove("detected")}}
+function resetAutoDates(){issueDateDisplay.textContent="Automática pelo certificado";expiryDateDisplay.textContent="Automática pelo certificado";issueDateDisplay.classList.remove("detected");expiryDateDisplay.classList.remove("detected")}
 function walkAsn1(node,fn){if(!node)return;fn(node);if(node.constructed&&Array.isArray(node.value))node.value.forEach(child=>walkAsn1(child,fn))}
 function oid(node){try{return node&&node.type===0x06?forge.asn1.derToOid(node.value):""}catch{return""}}
 function extractCertDerFromPfx(asn1){
@@ -152,7 +152,7 @@ function openCreateModal(){
 function openEditModal(id){
   if(!isAdmin())return;
   const c=certificates.find(x=>x.id===id);if(!c)return;
-  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;certFile.value="";showDetectedDates(issueDate,expiryDate));
+  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;certFile.value="";showDetectedDates(issueDate,expiryDate);
   certFile.required=false;fileRequiredLabel.textContent="";fileHelp.textContent="Deixe vazio para manter o arquivo atual. Ao trocar o PFX/P12, as datas de emissão e vencimento serão atualizadas automaticamente.";modalTitle.textContent="Editar certificado";modalSubtitle.textContent="As datas são controladas automaticamente pelo certificado.";modal.classList.remove("hidden");
 }
 
@@ -193,7 +193,7 @@ certificateForm.addEventListener("submit",async e=>{
         if(!password){saveError.textContent="Informe a senha do certificado para que o sistema possa ler o PFX/P12.";return}
         saveError.textContent="Lendo o certificado e identificando as datas automaticamente…";
         const dates=await extractPfxInfo(file,password);
-        issueDate=dates.issueDate;expiryDate=dates.expiryDate;showDetectedDates(issueDate,expiryDate));
+        issueDate=dates.issueDate;expiryDate=dates.expiryDate;showDetectedDates(issueDate,expiryDate);
       }else{
         if(editingId){const oldCert=certificates.find(x=>x.id===editingId);issueDate=oldCert.issueDate;expiryDate=oldCert.expiryDate;}
         else{saveError.textContent="Para o preenchimento automático das datas, cadastre o certificado em PFX ou P12.";return}
