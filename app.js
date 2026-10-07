@@ -58,9 +58,6 @@ async function extractPfxInfo(file,password){
   for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));
   const der=forge.util.createBuffer(binary,"raw").getBytes();
   const asn1=forge.asn1.fromDer(der);
-
-  // Primeiro usamos o parser PKCS#12 do node-forge. Ele entende tanto
-  // SafeContents normais quanto SafeContents criptografados por senha.
   try{
     const p12=forge.pkcs12.pkcs12FromAsn1(asn1,false,password);
     const bags=p12.getBags({bagType:forge.pki.oids.certBag});
@@ -68,39 +65,25 @@ async function extractPfxInfo(file,password){
     for(const bag of certBags){
       try{
         const cert=bag.cert||forge.pki.certificateFromAsn1(bag.certBag||bag.asn1);
-        if(cert){
-          return {
-            issueDate:isoDate(cert.validity.notBefore),
-            expiryDate:isoDate(cert.validity.notAfter),
-            documentId:extractCpfCnpj(cert),
-            documentIdType:""
-          };
-        }
+        if(cert)return {issueDate:isoDate(cert.validity.notBefore),expiryDate:isoDate(cert.validity.notAfter)};
       }catch{}
     }
-  }catch(err){
-    // Mantemos um fallback ASN.1 para arquivos PFX/P12 que tenham uma
-    // estrutura incomum, sem bloquear a tentativa pelo parser padrão.
-  }
-
-  // Fallback: procura CertBag x509 diretamente no ASN.1 já decodificado.
+  }catch{}
   const certDers=extractCertDerFromPfx(asn1);
   for(const certDer of certDers){
     try{
       const cert=forge.pki.certificateFromAsn1(forge.asn1.fromDer(certDer));
-      return {
-        issueDate:isoDate(cert.validity.notBefore),
-        expiryDate:isoDate(cert.validity.notAfter),
-        documentId:extractCpfCnpj(cert),
-        documentIdType:""
-      };
+      return {issueDate:isoDate(cert.validity.notBefore),expiryDate:isoDate(cert.validity.notAfter)};
     }catch{}
   }
-
   throw new Error("Não foi possível localizar o certificado público dentro deste PFX/P12. Verifique se o arquivo é um PFX/P12 válido e se a senha está correta.");
 }
-function showDetectedDates(issue)){issueDateDisplay.textContent=formatDate(issue);expiryDateDisplay.textContent=formatDate(expiry);issueDateDisplay.classList.add("detected");expiryDateDisplay.classList.add("detected")}
-
+function showDetectedDates(issueDate,expiryDate){
+  issueDateDisplay.textContent=formatDate(issue);
+  expiryDateDisplay.textContent=formatDate(expiry);
+  issueDateDisplay.classList.add("detected");
+  expiryDateDisplay.classList.add("detected");
+}
 const NOTIFY_THRESHOLDS=[60,30,21,14,7,5,4,3,2,1];
 const NOTIFY_KEY="costalog_certificate_notifications_v1";
 function loadNotifications(){try{return JSON.parse(localStorage.getItem(NOTIFY_KEY)||"[]")}catch{return[]}}
@@ -169,7 +152,7 @@ function openCreateModal(){
 function openEditModal(id){
   if(!isAdmin())return;
   const c=certificates.find(x=>x.id===id);if(!c)return;
-  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;certFile.value="";showDetectedDates(c.issueDate));
+  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;certFile.value="";showDetectedDates(issueDate,expiryDate));
   certFile.required=false;fileRequiredLabel.textContent="";fileHelp.textContent="Deixe vazio para manter o arquivo atual. Ao trocar o PFX/P12, as datas de emissão e vencimento serão atualizadas automaticamente.";modalTitle.textContent="Editar certificado";modalSubtitle.textContent="As datas são controladas automaticamente pelo certificado.";modal.classList.remove("hidden");
 }
 
@@ -210,7 +193,7 @@ certificateForm.addEventListener("submit",async e=>{
         if(!password){saveError.textContent="Informe a senha do certificado para que o sistema possa ler o PFX/P12.";return}
         saveError.textContent="Lendo o certificado e identificando as datas automaticamente…";
         const dates=await extractPfxInfo(file,password);
-        issueDate=dates.issueDate;expiryDate=dates.expiryDate;showDetectedDates(issueDate));
+        issueDate=dates.issueDate;expiryDate=dates.expiryDate;showDetectedDates(issueDate,expiryDate));
       }else{
         if(editingId){const oldCert=certificates.find(x=>x.id===editingId);issueDate=oldCert.issueDate;expiryDate=oldCert.expiryDate;}
         else{saveError.textContent="Para o preenchimento automático das datas, cadastre o certificado em PFX ou P12.";return}
