@@ -51,21 +51,77 @@ function extractCertDerFromPfx(asn1){
   return found;
 }
 function normalizeDocumentId(v){
-  const digits=String(v||"").replace(/\D/g,"");
-  if(digits.length===11)return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4");
-  if(digits.length===14)return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,"$1.$2.$3/$4-$5");
+  const digits=String(v||"").replace(/\\D/g,"");
+  if(digits.length===11)return digits.replace(/(\\d{3})(\\d{3})(\\d{3})(\\d{2})/,"$1.$2.$3-$4");
+  if(digits.length===14)return digits.replace(/(\\d{2})(\\d{3})(\\d{3})(\\d{4})(\\d{2})/,"$1.$2.$3/$4-$5");
   return "";
 }
+function documentIdFromRaw(value,type){
+  const text=String(value||"");
+  const label=type==="CNPJ"?"CNPJ":"CPF";
+  const digits=text.replace(/\\D/g,"");
+  const len=label==="CNPJ"?14:11;
+  if(digits.length===len)return normalizeDocumentId(digits);
+  const re=label==="CNPJ"
+    ? /\\b\\d{2}[. ]?\\d{3}[. ]?\\d{3}[\\/ ]?\\d{4}[- ]?\\d{2}\\b/
+    : /\\b\\d{3}[. ]?\\d{3}[. ]?\\d{3}[- ]?\\d{2}\\b/;
+  const m=text.match(re);
+  return m?normalizeDocumentId(m[0]):"";
+}
 function extractCpfCnpj(cert){
-  const values=[];
-  (cert.subject?.attributes||[]).forEach(a=>values.push(String(a.value||"")));
-  (cert.extensions||[]).forEach(e=>values.push(String(e.value||"")));
-  const all=values.join(" ");
-  const cnpj=all.match(/\b\d{2}[. ]?\d{3}[. ]?\d{3}[\/ ]?\d{4}[- ]?\d{2}\b/);
-  if(cnpj){const n=normalizeDocumentId(cnpj[0]);if(n)return n}
-  const cpf=all.match(/\b\d{3}[. ]?\d{3}[. ]?\d{3}[- ]?\d{2}\b/);
-  if(cpf){const n=normalizeDocumentId(cpf[0]);if(n)return n}
-  return "";
+  // ICP-Brasil: OIDs oficiais usados para identificar o titular.
+  const CNPJ_OID="2.16.76.1.3.3";
+  const CPF_OID="2.16.76.1.3.1";
+  let result={documentId:"",documentIdType:""};
+
+  function addCandidate(type,value){
+    if(result.documentId)return;
+    const id=documentIdFromRaw(value,type);
+    if(id)result={documentId:id,documentIdType:type};
+  }
+
+  function walkWithParent(node,parentOid=""){
+    if(!node)return;
+    const currentOid=oid(node);
+    const nextOid=currentOid||parentOid;
+    if(node.constructed&&Array.isArray(node.value)){
+      node.value.forEach(child=>walkWithParent(child,nextOid));
+    }else if(typeof node.value==="string"&&nextOid){
+      if(nextOid===CNPJ_OID)addCandidate("CNPJ",node.value);
+      if(nextOid===CPF_OID)addCandidate("CPF",node.value);
+    }
+  }
+
+  // Procura primeiro os OIDs ICP-Brasil, evitando confundir CPF com
+  // números encontrados em nome, razão social ou outras extensões.
+  walkWithParent(cert.subject);
+  (cert.extensions||[]).forEach(ext=>walkWithParent(ext));
+
+  // Fallback apenas dentro dos campos do titular, priorizando atributos
+  // explicitamente rotulados como CPF/CNPJ.
+  if(!result.documentId){
+    (cert.subject?.attributes||[]).forEach(a=>{
+      const name=String(a.name||"").toLowerCase();
+      const short=String(a.shortName||"").toLowerCase();
+      const oidName=String(a.type||"");
+      if(name.includes("cnpj")||short.includes("cnpj")||oidName===CNPJ_OID)addCandidate("CNPJ",a.value);
+      else if(name.includes("cpf")||short.includes("cpf")||oidName===CPF_OID)addCandidate("CPF",a.value);
+    });
+  }
+
+  // Último fallback: padrões de CPF/CNPJ no subject, mas sem escolher
+  // arbitrariamente um número de 14 dígitos antes de verificar o contexto.
+  if(!result.documentId){
+    const subjectText=(cert.subject?.attributes||[]).map(a=>String(a.value||"")).join(" ");
+    const cnpj=subjectText.match(/\\b\\d{2}[. ]?\\d{3}[. ]?\\d{3}[\\/ ]?\\d{4}[- ]?\\d{2}\\b/);
+    if(cnpj)addCandidate("CNPJ",cnpj[0]);
+    if(!result.documentId){
+      const cpf=subjectText.match(/\\b\\d{3}[. ]?\\d{3}[. ]?\\d{3}[- ]?\\d{2}\\b/);
+      if(cpf)addCandidate("CPF",cpf[0]);
+    }
+  }
+
+  return result;
 }
 async function extractPfxInfo(file,password){
   if(!window.forge)throw new Error("O módulo de leitura de certificados não carregou. Recarregue a página e tente novamente.");
