@@ -72,16 +72,48 @@ async function extractPfxInfo(file,password){
   const buffer=await file.arrayBuffer(),bytes=new Uint8Array(buffer);
   let binary="";const chunk=0x8000;
   for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));
-  const asn1=forge.asn1.fromDer(forge.util.createBuffer(binary,"raw").getBytes());
+  const der=forge.util.createBuffer(binary,"raw").getBytes();
+  const asn1=forge.asn1.fromDer(der);
+
+  // Primeiro usamos o parser PKCS#12 do node-forge. Ele entende tanto
+  // SafeContents normais quanto SafeContents criptografados por senha.
+  try{
+    const p12=forge.pkcs12.pkcs12FromAsn1(asn1,false,password);
+    const bags=p12.getBags({bagType:forge.pki.oids.certBag});
+    const certBags=bags[forge.pki.oids.certBag]||[];
+    for(const bag of certBags){
+      try{
+        const cert=bag.cert||forge.pki.certificateFromAsn1(bag.certBag||bag.asn1);
+        if(cert){
+          return {
+            issueDate:isoDate(cert.validity.notBefore),
+            expiryDate:isoDate(cert.validity.notAfter),
+            documentId:extractCpfCnpj(cert),
+            documentIdType:""
+          };
+        }
+      }catch{}
+    }
+  }catch(err){
+    // Mantemos um fallback ASN.1 para arquivos PFX/P12 que tenham uma
+    // estrutura incomum, sem bloquear a tentativa pelo parser padrão.
+  }
+
+  // Fallback: procura CertBag x509 diretamente no ASN.1 já decodificado.
   const certDers=extractCertDerFromPfx(asn1);
-  if(!certDers.length)throw new Error("Não foi possível localizar o certificado público dentro deste PFX/P12.");
   for(const certDer of certDers){
     try{
       const cert=forge.pki.certificateFromAsn1(forge.asn1.fromDer(certDer));
-      return {issueDate:isoDate(cert.validity.notBefore),expiryDate:isoDate(cert.validity.notAfter),documentId:extractCpfCnpj(cert)};
+      return {
+        issueDate:isoDate(cert.validity.notBefore),
+        expiryDate:isoDate(cert.validity.notAfter),
+        documentId:extractCpfCnpj(cert),
+        documentIdType:""
+      };
     }catch{}
   }
-  throw new Error("O certificado foi localizado, mas não foi possível interpretar seus dados.");
+
+  throw new Error("Não foi possível localizar o certificado público dentro deste PFX/P12. Verifique se o arquivo é um PFX/P12 válido e se a senha está correta.");
 }
 function showDetectedDates(issue,expiry,documentId="",documentIdType=""){
   issueDateDisplay.textContent=formatDate(issue);expiryDateDisplay.textContent=formatDate(expiry);
