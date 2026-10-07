@@ -50,79 +50,7 @@ function extractCertDerFromPfx(asn1){
 
   return found;
 }
-function normalizeDocumentId(v){
-  const digits=String(v||"").replace(/\\D/g,"");
-  if(digits.length===11)return digits.replace(/(\\d{3})(\\d{3})(\\d{3})(\\d{2})/,"$1.$2.$3-$4");
-  if(digits.length===14)return digits.replace(/(\\d{2})(\\d{3})(\\d{3})(\\d{4})(\\d{2})/,"$1.$2.$3/$4-$5");
-  return "";
-}
-function documentIdFromRaw(value,type){
-  const text=String(value||"");
-  const label=type==="CNPJ"?"CNPJ":"CPF";
-  const digits=text.replace(/\\D/g,"");
-  const len=label==="CNPJ"?14:11;
-  if(digits.length===len)return normalizeDocumentId(digits);
-  const re=label==="CNPJ"
-    ? /\\b\\d{2}[. ]?\\d{3}[. ]?\\d{3}[\\/ ]?\\d{4}[- ]?\\d{2}\\b/
-    : /\\b\\d{3}[. ]?\\d{3}[. ]?\\d{3}[- ]?\\d{2}\\b/;
-  const m=text.match(re);
-  return m?normalizeDocumentId(m[0]):"";
-}
-function extractCpfCnpj(cert){
-  // ICP-Brasil: OIDs oficiais usados para identificar o titular.
-  const CNPJ_OID="2.16.76.1.3.3";
-  const CPF_OID="2.16.76.1.3.1";
-  let result={documentId:"",documentIdType:""};
 
-  function addCandidate(type,value){
-    if(result.documentId)return;
-    const id=documentIdFromRaw(value,type);
-    if(id)result={documentId:id,documentIdType:type};
-  }
-
-  function walkWithParent(node,parentOid=""){
-    if(!node)return;
-    const currentOid=oid(node);
-    const nextOid=currentOid||parentOid;
-    if(node.constructed&&Array.isArray(node.value)){
-      node.value.forEach(child=>walkWithParent(child,nextOid));
-    }else if(typeof node.value==="string"&&nextOid){
-      if(nextOid===CNPJ_OID)addCandidate("CNPJ",node.value);
-      if(nextOid===CPF_OID)addCandidate("CPF",node.value);
-    }
-  }
-
-  // Procura primeiro os OIDs ICP-Brasil, evitando confundir CPF com
-  // números encontrados em nome, razão social ou outras extensões.
-  walkWithParent(cert.subject);
-  (cert.extensions||[]).forEach(ext=>walkWithParent(ext));
-
-  // Fallback apenas dentro dos campos do titular, priorizando atributos
-  // explicitamente rotulados como CPF/CNPJ.
-  if(!result.documentId){
-    (cert.subject?.attributes||[]).forEach(a=>{
-      const name=String(a.name||"").toLowerCase();
-      const short=String(a.shortName||"").toLowerCase();
-      const oidName=String(a.type||"");
-      if(name.includes("cnpj")||short.includes("cnpj")||oidName===CNPJ_OID)addCandidate("CNPJ",a.value);
-      else if(name.includes("cpf")||short.includes("cpf")||oidName===CPF_OID)addCandidate("CPF",a.value);
-    });
-  }
-
-  // Último fallback: padrões de CPF/CNPJ no subject, mas sem escolher
-  // arbitrariamente um número de 14 dígitos antes de verificar o contexto.
-  if(!result.documentId){
-    const subjectText=(cert.subject?.attributes||[]).map(a=>String(a.value||"")).join(" ");
-    const cnpj=subjectText.match(/\\b\\d{2}[. ]?\\d{3}[. ]?\\d{3}[\\/ ]?\\d{4}[- ]?\\d{2}\\b/);
-    if(cnpj)addCandidate("CNPJ",cnpj[0]);
-    if(!result.documentId){
-      const cpf=subjectText.match(/\\b\\d{3}[. ]?\\d{3}[. ]?\\d{3}[- ]?\\d{2}\\b/);
-      if(cpf)addCandidate("CPF",cpf[0]);
-    }
-  }
-
-  return result;
-}
 async function extractPfxInfo(file,password){
   if(!window.forge)throw new Error("O módulo de leitura de certificados não carregou. Recarregue a página e tente novamente.");
   const buffer=await file.arrayBuffer(),bytes=new Uint8Array(buffer);
@@ -171,11 +99,7 @@ async function extractPfxInfo(file,password){
 
   throw new Error("Não foi possível localizar o certificado público dentro deste PFX/P12. Verifique se o arquivo é um PFX/P12 válido e se a senha está correta.");
 }
-function showDetectedDates(issue,expiry,documentId="",documentIdType=""){
-  issueDateDisplay.textContent=formatDate(issue);expiryDateDisplay.textContent=formatDate(expiry);
-  issueDateDisplay.classList.add("detected");expiryDateDisplay.classList.add("detected");
-  if(certIdentityDisplay){certIdentityDisplay.textContent=documentId?(documentIdType+" • "+documentId):"Não identificado no certificado";certIdentityDisplay.classList.toggle("detected",!!documentId)}
-}
+function showDetectedDates(issue)){issueDateDisplay.textContent=formatDate(issue);expiryDateDisplay.textContent=formatDate(expiry);issueDateDisplay.classList.add("detected");expiryDateDisplay.classList.add("detected")}
 
 const NOTIFY_THRESHOLDS=[60,30,21,14,7,5,4,3,2,1];
 const NOTIFY_KEY="costalog_certificate_notifications_v1";
@@ -207,7 +131,7 @@ function render(){
     const adminActions=isAdmin()
       ? '<button class="edit-btn" data-edit="'+escapeHtml(c.id)+'" title="Editar certificado">Editar</button><button class="delete-btn" data-delete="'+escapeHtml(c.id)+'" title="Excluir certificado">Excluir</button>'
       : "";
-    return '<article class="cert-card"><div class="cert-top"><div class="pdf-icon">' + escapeHtml((c.fileName||"").split(".").pop().toUpperCase()||"CERT") + '</div><span class="status '+status.key+'">'+status.label+'</span></div><h3>'+escapeHtml(c.name)+'</h3><div class="cert-meta"><div><strong>Emissão:</strong> '+formatDate(c.issueDate)+'</div><div><strong>Expiração:</strong> '+formatDate(c.expiryDate)+'</div><div class="cert-document-id"><strong>'+(c.documentIdType||"CPF/CNPJ")+':</strong> '+escapeHtml(c.documentId||"Não identificado")+'</div></div><div class="cert-password">Senha do certificado: <code>'+escapeHtml(c.password)+'</code></div><div class="cert-actions"><a class="download-btn" href="'+c.fileData+'" download="'+escapeHtml(c.fileName)+'">Baixar certificado</a>'+adminActions+'</div></article>';
+    return '<article class="cert-card"><div class="cert-top"><div class="pdf-icon">' + escapeHtml((c.fileName||"").split(".").pop().toUpperCase()||"CERT") + '</div><span class="status '+status.key+'">'+status.label+'</span></div><h3>'+escapeHtml(c.name)+'</h3><div class="cert-meta"><div><strong>Emissão:</strong> '+formatDate(c.issueDate)+'</div><div><strong>Expiração:</strong> '+formatDate(c.expiryDate)+'</div></div><div class="cert-password">Senha do certificado: <code>'+escapeHtml(c.password)+'</code></div><div class="cert-actions"><a class="download-btn" href="'+c.fileData+'" download="'+escapeHtml(c.fileName)+'">Baixar certificado</a>'+adminActions+'</div></article>';
   }).join("");
   emptyState.style.display=filtered.length?"none":"block";
   if(!filtered.length&&certificates.length){emptyState.querySelector("h3").textContent="Nenhum certificado encontrado";emptyState.querySelector("p").textContent="Tente outro termo de pesquisa ou filtro."}
@@ -239,14 +163,14 @@ $("#logoutBtn").addEventListener("click",logout);$("#notificationBtn").addEventL
 function openCreateModal(){
   if(!isAdmin())return;
   editingId=null;saveError.textContent="";certificateForm.reset();resetAutoDates();modalTitle.textContent="Adicionar certificado";modalSubtitle.textContent="Cadastre um novo documento na central.";
-  certFile.required=true;fileRequiredLabel.textContent="*";fileHelp.textContent="Envie o PFX/P12. As datas e o CPF/CNPJ serão extraídos automaticamente (máx. 4 MB).";modal.classList.remove("hidden");
+  certFile.required=true;fileRequiredLabel.textContent="*";fileHelp.textContent="Envie o PFX/P12. As datas de emissão e vencimento serão extraídas automaticamente (máx. 4 MB).";modal.classList.remove("hidden");
 }
 
 function openEditModal(id){
   if(!isAdmin())return;
   const c=certificates.find(x=>x.id===id);if(!c)return;
-  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;certFile.value="";showDetectedDates(c.issueDate,c.expiryDate,c.documentId||"",c.documentIdType||"");
-  certFile.required=false;fileRequiredLabel.textContent="";fileHelp.textContent="Deixe vazio para manter o arquivo atual. Ao trocar o PFX/P12, as datas e o CPF/CNPJ serão atualizados automaticamente.";modalTitle.textContent="Editar certificado";modalSubtitle.textContent="As datas são controladas automaticamente pelo certificado.";modal.classList.remove("hidden");
+  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;certFile.value="";showDetectedDates(c.issueDate));
+  certFile.required=false;fileRequiredLabel.textContent="";fileHelp.textContent="Deixe vazio para manter o arquivo atual. Ao trocar o PFX/P12, as datas de emissão e vencimento serão atualizadas automaticamente.";modalTitle.textContent="Editar certificado";modalSubtitle.textContent="As datas são controladas automaticamente pelo certificado.";modal.classList.remove("hidden");
 }
 
 $("#openAdmin").addEventListener("click",openCreateModal);
@@ -278,7 +202,7 @@ certificateForm.addEventListener("submit",async e=>{
   if(!editingId&&!isAllowedFile){saveError.textContent="Arquivo inválido. Envie um PFX ou P12 para identificação automática das datas.";return}
   if(file&&!isAllowedFile){saveError.textContent="Arquivo inválido. Envie um PDF, PFX ou P12.";return}
   if(file&&file.size>4*1024*1024){saveError.textContent="O arquivo deve ter no máximo 4 MB.";return}
-  let issueDate,expiryDate,documentId="",documentIdType="",fileData,fileNameOriginal;
+  let issueDate,expiryDate,fileData,fileNameOriginal;
   try{
     if(file){
       fileNameOriginal=file.name;
@@ -286,22 +210,22 @@ certificateForm.addEventListener("submit",async e=>{
         if(!password){saveError.textContent="Informe a senha do certificado para que o sistema possa ler o PFX/P12.";return}
         saveError.textContent="Lendo o certificado e identificando as datas automaticamente…";
         const dates=await extractPfxInfo(file,password);
-        issueDate=dates.issueDate;expiryDate=dates.expiryDate;documentId=dates.documentId||"";documentIdType=dates.documentIdType||"";showDetectedDates(issueDate,expiryDate,documentId,documentIdType);
+        issueDate=dates.issueDate;expiryDate=dates.expiryDate;showDetectedDates(issueDate));
       }else{
-        if(editingId){const oldCert=certificates.find(x=>x.id===editingId);issueDate=oldCert.issueDate;expiryDate=oldCert.expiryDate;documentId=oldCert.documentId||"";documentIdType=oldCert.documentIdType||""}
+        if(editingId){const oldCert=certificates.find(x=>x.id===editingId);issueDate=oldCert.issueDate;expiryDate=oldCert.expiryDate;}
         else{saveError.textContent="Para o preenchimento automático das datas, cadastre o certificado em PFX ou P12.";return}
       }
       fileData=await new Promise((resolve,reject)=>{const reader=new FileReader;reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error("Erro ao ler o arquivo."));reader.readAsDataURL(file)});
     }else{
       const oldCert=certificates.find(x=>x.id===editingId);if(!oldCert)return;
-      issueDate=oldCert.issueDate;expiryDate=oldCert.expiryDate;documentId=oldCert.documentId||"";documentIdType=oldCert.documentIdType||"";fileData=oldCert.fileData;fileNameOriginal=oldCert.fileName;
+      issueDate=oldCert.issueDate;expiryDate=oldCert.expiryDate;;fileData=oldCert.fileData;fileNameOriginal=oldCert.fileName;
     }
     if(expiryDate<issueDate){saveError.textContent="O certificado retornou datas inválidas (expiração anterior à emissão).";return}
     if(editingId){
       const idx=certificates.findIndex(x=>x.id===editingId);if(idx===-1)return;
-      certificates[idx]={...certificates[idx],name,password,issueDate,expiryDate,documentId,documentIdType,fileData,fileName:fileNameOriginal};
+      certificates[idx]={...certificates[idx],name,password,issueDate,expiryDate,fileData,fileName:fileNameOriginal};
     }else{
-      certificates.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,password,issueDate,expiryDate,fileName:fileNameOriginal,documentId,documentIdType,fileData});
+      certificates.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,password,issueDate,expiryDate,fileName:fileNameOriginal,fileData});
     }
     try{saveCertificates();modal.classList.add("hidden");editingId=null;saveError.textContent="";render();checkNotifications()}catch{saveError.textContent="Não foi possível salvar. O armazenamento do navegador pode estar cheio."}
   }catch(err){
