@@ -58,7 +58,7 @@
             <p>Consulte, visualize senhas e baixe os documentos disponíveis no portal.</p>
           </div>
           <div class="stats-wrap">
-            <div class="stats-card"><span>Documentos disponíveis</span><strong id="certificateCount">0</strong></div>
+            <button class="stats-card status-card all-stat" type="button" data-status-card="all"><span>Documentos disponíveis</span><strong id="certificateCount">0</strong><small>Ver todos os certificados</small></button>
             <button class="stats-card status-card valid-stat" type="button" data-status-card="valid"><span>D. válidos</span><strong id="validCount">0</strong></button>
             <button class="stats-card status-card expiring-stat" type="button" data-status-card="expiring"><span>D. a vencer</span><strong id="expiringCount">0</strong></button>
             <button class="stats-card status-card expired-stat" type="button" data-status-card="expired"><span>D. vencidos</span><strong id="expiredCount">0</strong></button>
@@ -89,9 +89,9 @@
         <div class="form-grid">
           <div class="field full"><label for="certName">Nome do certificado *</label><input id="certName" required placeholder="Ex.: Certificado de Transporte de Produtos Perigosos"></div>
           <div class="field"><label for="certPassword">Senha do certificado *</label><input id="certPassword" required placeholder="Senha usada para abrir o arquivo"></div>
-          <div class="field"><label for="certFile">Arquivo do certificado <span id="fileRequiredLabel">*</span></label><input id="certFile" type="file" accept=".pdf,.pfx,.p12,application/pdf,application/x-pkcs12,application/pkcs12,application/octet-stream"><small id="fileHelp">Envie o PFX ou P12 e o sistema identificará automaticamente emissão, vencimento e CPF/CNPJ.</small></div>
+          <div class="field"><label for="certFile">Arquivo do certificado <span id="fileRequiredLabel">*</span></label><input id="certFile" type="file" accept=".pdf,.pfx,.p12,application/pdf,application/x-pkcs12,application/pkcs12,application/octet-stream"><small id="fileHelp">Envie o PFX ou P12 e o sistema identificará automaticamente as datas de emissão e vencimento.</small></div>
           <div class="field auto-date"><label>Data de emissão</label><div id="issueDateDisplay" class="auto-date-value">Automática pelo certificado</div></div>
-          <div class="field auto-date"><label>Data de expiração</label><div id="expiryDateDisplay" class="auto-date-value">Automática pelo certificado</div></div><div class="field auto-date"><label>CPF / CNPJ</label><div id="certIdentityDisplay" class="auto-date-value">Automático pelo certificado</div></div>
+          <div class="field auto-date"><label>Data de expiração</label><div id="expiryDateDisplay" class="auto-date-value">Automática pelo certificado</div></div>
         </div>
         <div class="notice"><strong>Acesso administrativo:</strong> somente administradores podem adicionar, editar ou excluir certificados.</div>
         <div class="modal-actions"><button type="button" class="secondary-btn" data-close-modal>Cancelar</button><button type="submit" class="primary-btn">Salvar certificado</button></div>
