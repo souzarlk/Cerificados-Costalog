@@ -132,7 +132,7 @@ body.dark-mode{--black:#f5f5f5;--gray-300:#444;--gray-500:#aaa;--shadow:0 18px 5
 .dark-mode .cert-password code{color:#fff}
 .dark-mode .edit-btn,.dark-mode .delete-btn{background:#232328;color:#eee;border-color:#444}
 .dark-mode .empty-icon{background:#232328;color:#aaa}
-.dark-mode .footer{background:rgba(17,17,19,.94);border-color:#303035;color:#999}
+.dark-mode .footer{background:rgba(17,17,19,.94);border-color:#303035;color:#999}.dark-mode .footer img{filter:brightness(0) invert(1)}
 .dark-mode .theme-toggle{background:#f5f5f5;color:#222;border-color:#ddd}
 .dark-mode .notification-panel,.dark-mode .modal-card{background:#1a1a1e;color:#eee;border-color:#38383e}
 .dark-mode .notification-head{border-color:#333}.dark-mode .notification-item{border-color:#333}.dark-mode .notification-item span,.dark-mode .notification-empty,.dark-mode .modal-head p{color:#aaa}
