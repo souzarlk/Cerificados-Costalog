@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="Costalog">
+  <g fill="none" stroke="#111" stroke-width="34" stroke-linecap="round">
+    <path d="M310 155a230 230 0 1 0 0 460"/>
+    <path d="M405 235a150 150 0 1 0 0 300"/>
+    <path d="M530 155a230 230 0 0 1 0 460"/>
+  </g>
+  <path d="M365 380h420l-78-72 245 72-245 72 78-72H365z" fill="#ed1c24"/>
+  <g font-family="Arial,Helvetica,sans-serif" font-weight="900">
+    <text x="55" y="735" font-size="220" fill="#111">cos</text>
+    <text x="430" y="735" font-size="220" fill="#ed1c24">T</text>
+    <text x="555" y="735" font-size="220" fill="#111">A</text>
+    <text x="695" y="735" font-size="220" fill="#ed1c24">LOG</text>
+    <text x="190" y="815" font-size="54" font-weight="400" fill="#111" letter-spacing="8">A LOGÍSTICA IDEAL</text>
+  </g>
+</svg>
