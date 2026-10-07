@@ -6,7 +6,7 @@ const SESSION_KEY="costalog_role";
 const $=s=>document.querySelector(s);
 const loginScreen=$("#loginScreen"), app=$("#app"), loginForm=$("#loginForm"), passwordInput=$("#accessPassword"), togglePassword=$("#togglePassword"), loginError=$("#loginError");
 const certificateGrid=$("#certificateGrid"), emptyState=$("#emptyState"), certificateCount=$("#certificateCount"), validCount=$("#validCount"), expiringCount=$("#expiringCount"), expiredCount=$("#expiredCount"), searchInput=$("#searchInput"), statusFilter=$("#statusFilter");
-const modal=$("#adminModal"), certificateForm=$("#certificateForm"), saveError=$("#saveError"), modalTitle=$("#modalTitle"), modalSubtitle=$("#modalSubtitle"), certFile=$("#certFile"), fileRequiredLabel=$("#fileRequiredLabel"), fileHelp=$("#fileHelp");
+const modal=$("#adminModal"), certificateForm=$("#certificateForm"), saveError=$("#saveError"), modalTitle=$("#modalTitle"), modalSubtitle=$("#modalSubtitle"), certFile=$("#certFile"), fileRequiredLabel=$("#fileRequiredLabel"), fileHelp=$("#fileHelp"), issueDateDisplay=$("#issueDateDisplay"), expiryDateDisplay=$("#expiryDateDisplay");
 const roleBadge=$("#roleBadge"), accessLevel=$("#accessLevel");
 let currentRole=sessionStorage.getItem(SESSION_KEY)||null, editingId=null, certificates=loadCertificates();
 
@@ -17,6 +17,33 @@ function formatDate(v){if(!v)return"—";return new Intl.DateTimeFormat("pt-BR",
 function daysUntil(v){const t=new Date;t.setHours(0,0,0,0);const d=new Date(v+"T00:00:00");d.setHours(0,0,0,0);return Math.ceil((d-t)/86400000)}
 function getStatus(c){const d=daysUntil(c.expiryDate);if(d<0)return{key:"expired",label:"Expirado"};if(d<=30)return{key:"expiring",label:"Vence em breve"};return{key:"valid",label:"Válido"}}
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function isoDate(date){return new Intl.DateTimeFormat("en-CA",{timeZone:"UTC"}).format(date)}
+function resetAutoDates(){issueDateDisplay.textContent="Automática pelo certificado";expiryDateDisplay.textContent="Automática pelo certificado";issueDateDisplay.classList.remove("detected");expiryDateDisplay.classList.remove("detected")}
+async function extractPfxDates(file,password){
+  if(!window.forge)throw new Error("O módulo de leitura de certificados não carregou. Recarregue a página e tente novamente.");
+  const buffer=await file.arrayBuffer();
+  const bytes=new Uint8Array(buffer);
+  let binary="";
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));
+  const der=forge.util.createBuffer(binary,"raw").getBytes();
+  const asn1=forge.asn1.fromDer(der);
+  const p12=forge.pkcs12.pkcs12FromAsn1(asn1,false,password||"");
+  const bags=p12.getBags({bagType:forge.pki.oids.certBag});
+  const certBags=bags[forge.pki.oids.certBag]||[];
+  if(!certBags.length)throw new Error("O PFX/P12 não contém um certificado digital válido.");
+  const preferred=certBags.find(b=>b.cert&&b.cert.extensions&&b.cert.extensions.some(e=>e.name==="basicConstraints"&&e.cA===false))||certBags[0];
+  const cert=preferred.cert;
+  const issue=isoDate(cert.validity.notBefore);
+  const expiry=isoDate(cert.validity.notAfter);
+  if(!issue||!expiry)throw new Error("Não foi possível identificar as datas de validade do certificado.");
+  return {issueDate:issue,expiryDate:expiry};
+}
+function showDetectedDates(issue,expiry){
+  issueDateDisplay.textContent=formatDate(issue);
+  expiryDateDisplay.textContent=formatDate(expiry);
+  issueDateDisplay.classList.add("detected");expiryDateDisplay.classList.add("detected");
+}
 
 const NOTIFY_THRESHOLDS=[60,30,21,14,7,5,4,3,2,1];
 const NOTIFY_KEY="costalog_certificate_notifications_v1";
@@ -79,15 +106,15 @@ $("#logoutBtn").addEventListener("click",logout);$("#notificationBtn").addEventL
 
 function openCreateModal(){
   if(!isAdmin())return;
-  editingId=null;saveError.textContent="";certificateForm.reset();modalTitle.textContent="Adicionar certificado";modalSubtitle.textContent="Cadastre um novo documento na central.";
-  certFile.required=true;fileRequiredLabel.textContent="*";fileHelp.textContent="PDF, PFX ou P12 de até 4 MB.";modal.classList.remove("hidden");
+  editingId=null;saveError.textContent="";certificateForm.reset();resetAutoDates();modalTitle.textContent="Adicionar certificado";modalSubtitle.textContent="Cadastre um novo documento na central.";
+  certFile.required=true;fileRequiredLabel.textContent="*";fileHelp.textContent="Envie o PFX/P12. As datas serão extraídas automaticamente (máx. 4 MB).";modal.classList.remove("hidden");
 }
 
 function openEditModal(id){
   if(!isAdmin())return;
   const c=certificates.find(x=>x.id===id);if(!c)return;
-  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;$("#issueDate").value=c.issueDate;$("#expiryDate").value=c.expiryDate;certFile.value="";
-  certFile.required=false;fileRequiredLabel.textContent="";fileHelp.textContent="Deixe vazio para manter o arquivo atual.";modalTitle.textContent="Editar certificado";modalSubtitle.textContent="Atualize as informações ou substitua o arquivo.";modal.classList.remove("hidden");
+  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;certFile.value="";showDetectedDates(c.issueDate,c.expiryDate);
+  certFile.required=false;fileRequiredLabel.textContent="";fileHelp.textContent="Deixe vazio para manter o arquivo atual. Ao trocar o PFX/P12, as datas serão atualizadas automaticamente.";modalTitle.textContent="Editar certificado";modalSubtitle.textContent="As datas são controladas automaticamente pelo certificado.";modal.classList.remove("hidden");
 }
 
 $("#openAdmin").addEventListener("click",openCreateModal);
@@ -110,29 +137,47 @@ certificateGrid.addEventListener("click",e=>{
   }
 });
 
-certificateForm.addEventListener("submit",e=>{
+certificateForm.addEventListener("submit",async e=>{
   e.preventDefault();if(!isAdmin())return;saveError.textContent="";
-  const name=$("#certName").value.trim(),password=$("#certPassword").value,issueDate=$("#issueDate").value,expiryDate=$("#expiryDate").value,file=certFile.files[0];
-  if(expiryDate<issueDate){saveError.textContent="A data de expiração não pode ser anterior à data de emissão.";return}
+  const name=$("#certName").value.trim(),password=$("#certPassword").value,file=certFile.files[0];
   const fileName=(file?.name||"").toLowerCase();
-  const allowedExtensions=[".pdf",".pfx",".p12"];
+  const allowedExtensions=[".pfx",".p12",".pdf"];
   const isAllowedFile=file&&allowedExtensions.some(ext=>fileName.endsWith(ext));
-  if(!editingId&&!isAllowedFile){saveError.textContent="Arquivo inválido. Envie um PDF, PFX ou P12.";return}
+  if(!editingId&&!isAllowedFile){saveError.textContent="Arquivo inválido. Envie um PFX ou P12 para identificação automática das datas.";return}
   if(file&&!isAllowedFile){saveError.textContent="Arquivo inválido. Envie um PDF, PFX ou P12.";return}
   if(file&&file.size>4*1024*1024){saveError.textContent="O arquivo deve ter no máximo 4 MB.";return}
-  const finishSave=(fileData,fileName)=>{
-    if(editingId){
-      const i=certificates.findIndex(x=>x.id===editingId);if(i===-1)return;
-      certificates[i]={...certificates[i],name,password,issueDate,expiryDate,fileData:fileData||certificates[i].fileData,fileName:fileName||certificates[i].fileName};
+  let issueDate,expiryDate,fileData,fileNameOriginal;
+  try{
+    if(file){
+      fileNameOriginal=file.name;
+      if(/\.(pfx|p12)$/i.test(file.name)){
+        if(!password){saveError.textContent="Informe a senha do certificado para que o sistema possa ler o PFX/P12.";return}
+        saveError.textContent="Lendo o certificado e identificando as datas automaticamente…";
+        const dates=await extractPfxDates(file,password);
+        issueDate=dates.issueDate;expiryDate=dates.expiryDate;showDetectedDates(issueDate,expiryDate);
+      }else{
+        if(editingId){const oldCert=certificates.find(x=>x.id===editingId);issueDate=oldCert.issueDate;expiryDate=oldCert.expiryDate}
+        else{saveError.textContent="Para o preenchimento automático das datas, cadastre o certificado em PFX ou P12.";return}
+      }
+      fileData=await new Promise((resolve,reject)=>{const reader=new FileReader;reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error("Erro ao ler o arquivo."));reader.readAsDataURL(file)});
     }else{
-      certificates.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,password,issueDate,expiryDate,fileName,fileData});
+      const oldCert=certificates.find(x=>x.id===editingId);if(!oldCert)return;
+      issueDate=oldCert.issueDate;expiryDate=oldCert.expiryDate;fileData=oldCert.fileData;fileNameOriginal=oldCert.fileName;
     }
-    try{saveCertificates();modal.classList.add("hidden");editingId=null;render()}catch{saveError.textContent="Não foi possível salvar. O armazenamento do navegador pode estar cheio."}
-  };
-  if(!file){finishSave("","");return}
-  const reader=new FileReader;reader.onload=()=>finishSave(reader.result,file.name);reader.onerror=()=>{saveError.textContent="Erro ao ler o arquivo do certificado."};reader.readAsDataURL(file);
+    if(expiryDate<issueDate){saveError.textContent="O certificado retornou datas inválidas (expiração anterior à emissão).";return}
+    if(editingId){
+      const idx=certificates.findIndex(x=>x.id===editingId);if(idx===-1)return;
+      certificates[idx]={...certificates[idx],name,password,issueDate,expiryDate,fileData,fileName:fileNameOriginal};
+    }else{
+      certificates.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,password,issueDate,expiryDate,fileName:fileNameOriginal,fileData});
+    }
+    try{saveCertificates();modal.classList.add("hidden");editingId=null;saveError.textContent="";render();checkNotifications()}catch{saveError.textContent="Não foi possível salvar. O armazenamento do navegador pode estar cheio."}
+  }catch(err){
+    const msg=String(err&&err.message||"");
+    if(/Invalid password|Invalid MAC|MAC could not be verified|PKCS#12/i.test(msg))saveError.textContent="Não foi possível abrir o PFX/P12. Confira a senha do certificado.";
+    else saveError.textContent=msg||"Não foi possível ler as datas do certificado.";
+  }
 });
-
 function createMatrix(){
   const canvas=$("#matrixLayer"),ctx=canvas.getContext("2d"),chars="01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&@";
   let width=0,height=0,fontSize=15,columns=0,drops=[],raf=0,last=0,step=48;
