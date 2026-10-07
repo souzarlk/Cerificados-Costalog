@@ -22,14 +22,32 @@ function resetAutoDates(){issueDateDisplay.textContent="Automática pelo certifi
 function walkAsn1(node,fn){if(!node)return;fn(node);if(node.constructed&&Array.isArray(node.value))node.value.forEach(child=>walkAsn1(child,fn))}
 function oid(node){try{return node&&node.type===0x06?forge.asn1.derToOid(node.value):""}catch{return""}}
 function extractCertDerFromPfx(asn1){
-  const CERT_BAG_OID="1.2.840.113549.1.12.10.1.3",CERT_VALUE_OID="1.2.840.113549.1.9.22.1",found=[];
+  const CERT_BAG_OID="1.2.840.113549.1.12.10.1.3";
+  const CERT_VALUE_OID="1.2.840.113549.1.9.22.1";
+  const found=[];
+  const seen=new Set();
+
+  function firstOctet(node){
+    let result=null;
+    walkAsn1(node,n=>{
+      if(result!==null)return;
+      if(n&&n.type===0x04&&typeof n.value==="string")result=n.value;
+    });
+    return result;
+  }
+
   walkAsn1(asn1,node=>{
-    if(!node.constructed||!Array.isArray(node.value)||node.value.length<2||oid(node.value[0])!==CERT_BAG_OID)return;
-    const bagValue=node.value[1],certBag=bagValue&&Array.isArray(bagValue.value)?bagValue.value[0]:null;
-    if(!certBag||!Array.isArray(certBag.value)||oid(certBag.value[0])!==CERT_VALUE_OID)return;
-    const certValue=certBag.value[1];
-    if(certValue&&certValue.type===0x04&&typeof certValue.value==="string")found.push(certValue.value);
+    if(!node||!node.constructed||!Array.isArray(node.value)||!node.value.length)return;
+    if(oid(node.value[0])!==CERT_BAG_OID)return;
+
+    walkAsn1(node.value[1],child=>{
+      if(!child||!child.constructed||!Array.isArray(child.value)||!child.value.length)return;
+      if(oid(child.value[0])!==CERT_VALUE_OID)return;
+      const der=firstOctet(child.value[1]);
+      if(der&&!seen.has(der)){seen.add(der);found.push(der)}
+    });
   });
+
   return found;
 }
 function normalizeDocumentId(v){
