@@ -12,7 +12,7 @@ let currentRole=sessionStorage.getItem(SESSION_KEY)||null, editingId=null, certi
 
 function loadCertificates(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch{return[]}}
 function saveCertificates(){localStorage.setItem(STORAGE_KEY,JSON.stringify(certificates))}
-function isAdmin(){return currentRole==="admin"}
+function isAdmin(){currentRole=sessionStorage.getItem(SESSION_KEY)||currentRole;return currentRole==="admin"}
 function formatDate(v){if(!v)return"—";return new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC"}).format(new Date(v+"T00:00:00Z"))}
 function daysUntil(v){const t=new Date;t.setHours(0,0,0,0);const d=new Date(v+"T00:00:00");d.setHours(0,0,0,0);return Math.ceil((d-t)/86400000)}
 function getStatus(c){const d=daysUntil(c.expiryDate);if(d<0)return{key:"expired",label:"Expirado"};if(d<=30)return{key:"expiring",label:"Vence em breve"};return{key:"valid",label:"Válido"}}
@@ -46,8 +46,9 @@ function logout(){sessionStorage.removeItem(SESSION_KEY);currentRole=null;editin
 
 loginForm.addEventListener("submit",e=>{
   e.preventDefault();
-  if(passwordInput.value===ADMIN_PASSWORD)currentRole="admin";
-  else if(passwordInput.value===USER_PASSWORD)currentRole="user";
+  const enteredPassword=passwordInput.value.trim();
+  if(enteredPassword===ADMIN_PASSWORD)currentRole="admin";
+  else if(enteredPassword===USER_PASSWORD)currentRole="user";
   else{loginError.textContent="Senha incorreta. Verifique e tente novamente.";passwordInput.focus();return}
   sessionStorage.setItem(SESSION_KEY,currentRole);loginError.textContent="";openApp();
 });
@@ -65,14 +66,14 @@ $("#logoutBtn").addEventListener("click",logout);
 function openCreateModal(){
   if(!isAdmin())return;
   editingId=null;saveError.textContent="";certificateForm.reset();modalTitle.textContent="Adicionar certificado";modalSubtitle.textContent="Cadastre um novo documento na central.";
-  certFile.required=true;fileRequiredLabel.textContent="*";fileHelp.textContent="Somente arquivos PDF de até 4 MB.";modal.classList.remove("hidden");
+  certFile.required=true;fileRequiredLabel.textContent="*";fileHelp.textContent="PDF, PFX ou P12 de até 4 MB.";modal.classList.remove("hidden");
 }
 
 function openEditModal(id){
   if(!isAdmin())return;
   const c=certificates.find(x=>x.id===id);if(!c)return;
   editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;$("#issueDate").value=c.issueDate;$("#expiryDate").value=c.expiryDate;certFile.value="";
-  certFile.required=false;fileRequiredLabel.textContent="";fileHelp.textContent="Deixe vazio para manter o PDF atual.";modalTitle.textContent="Editar certificado";modalSubtitle.textContent="Atualize as informações ou substitua o PDF.";modal.classList.remove("hidden");
+  certFile.required=false;fileRequiredLabel.textContent="";fileHelp.textContent="Deixe vazio para manter o arquivo atual.";modalTitle.textContent="Editar certificado";modalSubtitle.textContent="Atualize as informações ou substitua o arquivo.";modal.classList.remove("hidden");
 }
 
 $("#openAdmin").addEventListener("click",openCreateModal);
@@ -92,8 +93,12 @@ certificateForm.addEventListener("submit",e=>{
   e.preventDefault();if(!isAdmin())return;saveError.textContent="";
   const name=$("#certName").value.trim(),password=$("#certPassword").value,issueDate=$("#issueDate").value,expiryDate=$("#expiryDate").value,file=certFile.files[0];
   if(expiryDate<issueDate){saveError.textContent="A data de expiração não pode ser anterior à data de emissão.";return}
-  if(!editingId&&(!file||file.type!=="application/pdf")){saveError.textContent="Selecione um arquivo PDF válido.";return}
-  if(file&&file.size>4*1024*1024){saveError.textContent="Use PDFs de até 4 MB.";return}
+  const fileName=(file?.name||"").toLowerCase();
+  const allowedExtensions=[".pdf",".pfx",".p12"];
+  const isAllowedFile=file&&allowedExtensions.some(ext=>fileName.endsWith(ext));
+  if(!editingId&&!isAllowedFile){saveError.textContent="Arquivo inválido. Envie um PDF, PFX ou P12.";return}
+  if(file&&!isAllowedFile){saveError.textContent="Arquivo inválido. Envie um PDF, PFX ou P12.";return}
+  if(file&&file.size>4*1024*1024){saveError.textContent="O arquivo deve ter no máximo 4 MB.";return}
   const finishSave=(fileData,fileName)=>{
     if(editingId){
       const i=certificates.findIndex(x=>x.id===editingId);if(i===-1)return;
@@ -104,7 +109,7 @@ certificateForm.addEventListener("submit",e=>{
     try{saveCertificates();modal.classList.add("hidden");editingId=null;render()}catch{saveError.textContent="Não foi possível salvar. O armazenamento do navegador pode estar cheio."}
   };
   if(!file){finishSave("","");return}
-  const reader=new FileReader;reader.onload=()=>finishSave(reader.result,file.name);reader.onerror=()=>{saveError.textContent="Erro ao ler o PDF."};reader.readAsDataURL(file);
+  const reader=new FileReader;reader.onload=()=>finishSave(reader.result,file.name);reader.onerror=()=>{saveError.textContent="Erro ao ler o arquivo do certificado."};reader.readAsDataURL(file);
 });
 
 function createMatrix(){
