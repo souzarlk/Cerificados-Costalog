@@ -108,11 +108,34 @@ certificateForm.addEventListener("submit",e=>{
 });
 
 function createMatrix(){
-  const layer=$("#matrixLayer"),chars="01 COSTALOG / CERTIFICADOS • + × # @",count=window.innerWidth<650?26:48;
-  for(let i=0;i<count;i++){
-    const col=document.createElement("span");col.className="matrix-column";col.style.left=(i/count*100+Math.random()*2)+"%";col.style.animationDuration=(5+Math.random()*8)+"s";col.style.animationDelay=(-Math.random()*10)+"s";col.style.fontSize=(10+Math.random()*7)+"px";
-    let content="";const length=28+Math.floor(Math.random()*38);for(let j=0;j<length;j++)content+=chars[Math.floor(Math.random()*chars.length)]+"\\n";col.textContent=content;layer.appendChild(col);
+  const canvas=$("#matrixLayer"),ctx=canvas.getContext("2d"),chars="01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&@";
+  let width=0,height=0,fontSize=15,columns=0,drops=[],raf=0,last=0,step=48;
+  function resize(){
+    const dpr=Math.min(window.devicePixelRatio||1,2),rect=canvas.getBoundingClientRect();
+    width=Math.max(1,Math.floor(rect.width));height=Math.max(1,Math.floor(rect.height));
+    canvas.width=Math.floor(width*dpr);canvas.height=Math.floor(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    fontSize=window.innerWidth<650?12:15;columns=Math.ceil(width/fontSize);drops=Array.from({length:columns},()=>Math.random()*-height/fontSize);
+    ctx.font="700 "+fontSize+"px 'Courier New',monospace";ctx.textBaseline="top";
   }
+  function draw(time){
+    if(!last)last=time;
+    if(time-last>=step){
+      ctx.fillStyle="rgba(227,6,19,.18)";ctx.fillRect(0,0,width,height);
+      ctx.fillStyle="rgba(255,255,255,.82)";
+      for(let i=0;i<columns;i++){
+        const x=i*fontSize,y=drops[i]*fontSize;
+        ctx.shadowBlur=7;ctx.shadowColor="rgba(255,255,255,.55)";
+        ctx.fillText(chars[(Math.random()*chars.length)|0],x,y);
+        drops[i]+=0.72;if(y>height+fontSize*8&&Math.random()>.975)drops[i]=Math.random()*-12;
+      }
+      ctx.shadowBlur=0;last=time;
+    }
+    raf=requestAnimationFrame(draw);
+  }
+  function start(){cancelAnimationFrame(raf);resize();last=0;raf=requestAnimationFrame(draw)}
+  window.addEventListener("resize",resize,{passive:true});
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)cancelAnimationFrame(raf);else raf=requestAnimationFrame(draw)});
+  start();
 }
 createMatrix();
 if(sessionStorage.getItem(SESSION_KEY)==="admin"||sessionStorage.getItem(SESSION_KEY)==="user"){currentRole=sessionStorage.getItem(SESSION_KEY);openApp()}
