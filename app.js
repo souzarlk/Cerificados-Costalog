@@ -18,6 +18,14 @@ function daysUntil(v){const t=new Date;t.setHours(0,0,0,0);const d=new Date(v+"T
 function getStatus(c){const d=daysUntil(c.expiryDate);if(d<0)return{key:"expired",label:"Expirado"};if(d<=30)return{key:"expiring",label:"Vence em breve"};return{key:"valid",label:"Válido"}}
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 
+const NOTIFY_THRESHOLDS=[60,30,21,14,7,5,4,3,2,1];
+const NOTIFY_KEY="costalog_certificate_notifications_v1";
+function loadNotifications(){try{return JSON.parse(localStorage.getItem(NOTIFY_KEY)||"[]")}catch{return[]}}
+function saveNotifications(v){localStorage.setItem(NOTIFY_KEY,JSON.stringify(v))}
+function notificationText(d){if(d===60)return"faltam 2 meses";if(d===30)return"falta 1 mês";if(d===21)return"faltam 3 semanas";if(d===14)return"faltam 2 semanas";if(d===7)return"falta 1 semana";return"faltam "+d+" dias"}
+function checkNotifications(){const sent=loadNotifications();let changed=false;certificates.forEach(c=>{const d=daysUntil(c.expiryDate);NOTIFY_THRESHOLDS.forEach(t=>{const key=c.id+":"+t;if(d<=t&&d>=1&&!sent.some(n=>n.key===key)){sent.unshift({key,id:c.id,name:c.name,text:notificationText(d)});changed=true;if("Notification"in window&&Notification.permission==="granted")new Notification("Certificado próximo do vencimento",{body:c.name+" — "+notificationText(d)+" para vencer.",icon:"assets/logo-costalog.svg"});}})});if(changed)saveNotifications(sent.slice(0,200));renderNotifications()}
+function renderNotifications(){const box=$("#notificationList"),badge=$("#notificationCount");if(!box||!badge)return;const items=loadNotifications().filter(n=>certificates.some(c=>c.id===n.id)).slice(0,20);badge.textContent=items.length>99?"99+":items.length;badge.classList.toggle("hidden",!items.length);box.innerHTML=items.length?items.map(n=>'<div class="notification-item"><strong>'+escapeHtml(n.name)+'</strong><span>'+escapeHtml(n.text)+' para vencer.</span></div>').join(""):'<div class="notification-empty">Nenhuma notificação de vencimento.</div>'}
+function requestNotifications(){if("Notification"in window&&Notification.permission==="default")Notification.requestPermission().then(()=>checkNotifications()).catch(()=>{})}
 function renderRole(){
   document.querySelectorAll(".admin-only").forEach(e=>e.classList.toggle("hidden",!isAdmin()));
   roleBadge.textContent=isAdmin()?"ADMINISTRADOR":"USUÁRIO";
@@ -27,21 +35,21 @@ function renderRole(){
 
 function render(){
   const term=searchInput.value.trim().toLowerCase(), filter=statusFilter.value;
-  const filtered=certificates.filter(c=>{const s=getStatus(c).key;return(!term||c.name.toLowerCase().includes(term))&&(filter==="all"||s===filter)});
+  const filtered=certificates.filter(c=>{const s=getStatus(c).key;return(!term||c.name.toLowerCase().includes(term))&&(filter==="all"||s===filter)}).sort((a,b)=>a.name.localeCompare(b.name,"pt-BR",{sensitivity:"base"}));
   certificateCount.textContent=certificates.length;
   certificateGrid.innerHTML=filtered.map(c=>{
     const status=getStatus(c);
     const adminActions=isAdmin()
       ? '<button class="edit-btn" data-edit="'+escapeHtml(c.id)+'" title="Editar certificado">Editar</button><button class="delete-btn" data-delete="'+escapeHtml(c.id)+'" title="Excluir certificado">Excluir</button>'
       : "";
-    return '<article class="cert-card"><div class="cert-top"><div class="pdf-icon">PDF</div><span class="status '+status.key+'">'+status.label+'</span></div><h3>'+escapeHtml(c.name)+'</h3><div class="cert-meta"><div><strong>Emissão:</strong> '+formatDate(c.issueDate)+'</div><div><strong>Expiração:</strong> '+formatDate(c.expiryDate)+'</div></div><div class="cert-password">Senha do certificado: <code>'+escapeHtml(c.password)+'</code></div><div class="cert-actions"><a class="download-btn" href="'+c.fileData+'" download="'+escapeHtml(c.fileName)+'">Baixar certificado</a>'+adminActions+'</div></article>';
+    return '<article class="cert-card"><div class="cert-top"><div class="pdf-icon">' + escapeHtml((c.fileName||"").split(".").pop().toUpperCase()||"CERT") + '</div><span class="status '+status.key+'">'+status.label+'</span></div><h3>'+escapeHtml(c.name)+'</h3><div class="cert-meta"><div><strong>Emissão:</strong> '+formatDate(c.issueDate)+'</div><div><strong>Expiração:</strong> '+formatDate(c.expiryDate)+'</div></div><div class="cert-password">Senha do certificado: <code>'+escapeHtml(c.password)+'</code></div><div class="cert-actions"><a class="download-btn" href="'+c.fileData+'" download="'+escapeHtml(c.fileName)+'">Baixar certificado</a>'+adminActions+'</div></article>';
   }).join("");
   emptyState.style.display=filtered.length?"none":"block";
   if(!filtered.length&&certificates.length){emptyState.querySelector("h3").textContent="Nenhum certificado encontrado";emptyState.querySelector("p").textContent="Tente outro termo de pesquisa ou filtro."}
   else{emptyState.querySelector("h3").textContent="Nenhum certificado cadastrado";emptyState.querySelector("p").textContent=isAdmin()?'Use “Adicionar certificado” para cadastrar o primeiro documento.':"Os documentos cadastrados aparecerão aqui."}
 }
 
-function openApp(){if(!currentRole)return;loginScreen.classList.add("hidden");app.classList.remove("hidden");renderRole();render()}
+function openApp(){if(!currentRole)return;loginScreen.classList.add("hidden");app.classList.remove("hidden");renderRole();render();checkNotifications();requestNotifications()}
 function logout(){sessionStorage.removeItem(SESSION_KEY);currentRole=null;editingId=null;app.classList.add("hidden");loginScreen.classList.remove("hidden");passwordInput.value="";passwordInput.type="password";togglePassword.classList.remove("visible");loginError.textContent=""}
 
 loginForm.addEventListener("submit",e=>{
@@ -61,7 +69,7 @@ togglePassword.addEventListener("click",()=>{
   togglePassword.setAttribute("title",showing?"Mostrar senha":"Ocultar senha");
 });
 
-$("#logoutBtn").addEventListener("click",logout);
+$("#logoutBtn").addEventListener("click",logout);$("#notificationBtn").addEventListener("click",()=>$("#notificationPanel").classList.toggle("hidden"));$("#closeNotifications").addEventListener("click",()=>$("#notificationPanel").classList.add("hidden"));
 
 function openCreateModal(){
   if(!isAdmin())return;
