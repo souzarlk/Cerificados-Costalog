@@ -79,8 +79,8 @@ async function extractPfxInfo(file,password){
   throw new Error("Não foi possível localizar o certificado público dentro deste PFX/P12. Verifique se o arquivo é um PFX/P12 válido e se a senha está correta.");
 }
 function showDetectedDates(issueDate,expiryDate){
-  issueDateDisplay.textContent=formatDate(issue);
-  expiryDateDisplay.textContent=formatDate(expiry);
+  issueDateDisplay.textContent=formatDate(issueDate);
+  expiryDateDisplay.textContent=formatDate(expiryDate);
   issueDateDisplay.classList.add("detected");
   expiryDateDisplay.classList.add("detected");
 }
