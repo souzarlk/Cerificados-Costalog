@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#e30613">
+  <title>Certificados Costalog</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="loginScreen" class="login-screen">
+    <div class="login-brand">
+      <img src="assets/logo-costalog-white.svg" alt="Costalog">
+    </div>
+    <div class="login-card">
+      <span class="eyebrow">ACESSO RESTRITO</span>
+      <h1>Certificados Costalog</h1>
+      <p>Entre com a senha de acesso para consultar e baixar certificados.</p>
+      <form id="loginForm">
+        <label for="accessPassword">Senha de acesso</label>
+        <div class="password-wrap">
+          <input id="accessPassword" type="password" autocomplete="current-password" placeholder="Digite a senha" required>
+          <button type="button" id="togglePassword" aria-label="Mostrar senha">◉</button>
+        </div>
+        <button class="primary-btn" type="submit">Entrar</button>
+        <div id="loginError" class="form-error"></div>
+      </form>
+    </div>
+    <div class="login-footer">Costalog • A logística ideal</div>
+  </div>
+
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand-lockup">
+          <img src="assets/logo-costalog-white.svg" alt="Costalog">
+          <div>
+            <strong>Certificados</strong>
+            <span>Central de documentos</span>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button id="openAdmin" class="outline-btn">+ Adicionar certificado</button>
+          <button id="logoutBtn" class="ghost-btn">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div>
+          <span class="eyebrow red">CENTRAL COSTALOG</span>
+          <h2>Certificados</h2>
+          <p>Consulte os documentos disponíveis e faça o download diretamente pelo portal.</p>
+        </div>
+        <div class="stats-card">
+          <span>Certificados cadastrados</span>
+          <strong id="certificateCount">0</strong>
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <div class="search-box">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="Pesquisar por nome do certificado...">
+        </div>
+        <select id="statusFilter" aria-label="Filtrar por status">
+          <option value="all">Todos</option>
+          <option value="valid">Válidos</option>
+          <option value="expiring">Vencendo em 30 dias</option>
+          <option value="expired">Expirados</option>
+        </select>
+      </section>
+
+      <section id="certificateGrid" class="certificate-grid"></section>
+
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">✓</div>
+        <h3>Nenhum certificado cadastrado</h3>
+        <p>Use o botão <strong>“Adicionar certificado”</strong> para cadastrar o primeiro documento.</p>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <img src="assets/logo-costalog.svg" alt="Costalog">
+      <span>Uso interno • Certificados Costalog</span>
+    </footer>
+  </div>
+
+  <div id="adminModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow red">GERENCIAMENTO</span>
+          <h2 id="modalTitle">Adicionar certificado</h2>
+        </div>
+        <button class="close-btn" data-close-modal aria-label="Fechar">×</button>
+      </div>
+
+      <form id="certificateForm">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="certName">Nome do certificado *</label>
+            <input id="certName" required placeholder="Ex.: Certificado de Transporte de Produtos Perigosos">
+          </div>
+          <div class="field">
+            <label for="certPassword">Senha do certificado *</label>
+            <input id="certPassword" required placeholder="Senha usada para abrir o PDF">
+          </div>
+          <div class="field">
+            <label for="certFile">Arquivo PDF *</label>
+            <input id="certFile" type="file" accept="application/pdf" required>
+          </div>
+          <div class="field">
+            <label for="issueDate">Data de emissão *</label>
+            <input id="issueDate" type="date" required>
+          </div>
+          <div class="field">
+            <label for="expiryDate">Data de expiração *</label>
+            <input id="expiryDate" type="date" required>
+          </div>
+        </div>
+        <div class="notice">
+          <strong>Primeira versão:</strong> os certificados adicionados pelo formulário ficam armazenados neste navegador. Para que todos os usuários enxerguem os mesmos documentos, a próxima etapa será conectar o portal a um banco/armazenamento online.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary-btn" data-close-modal>Cancelar</button>
+          <button type="submit" class="primary-btn">Salvar certificado</button>
+        </div>
+        <div id="saveError" class="form-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
