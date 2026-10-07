@@ -13,7 +13,6 @@
     <div class="login-glow login-glow-one" aria-hidden="true"></div>
     <div class="login-glow login-glow-two" aria-hidden="true"></div>
     <div class="login-brand"><img src="assets/logo-costalog.svg?v=4" alt="Costalog"></div>
-
     <div class="login-card">
       <div class="login-card-top"><span class="login-dot"></span><span>SISTEMA COSTALOG</span></div>
       <span class="eyebrow">ACESSO RESTRITO</span>
@@ -50,31 +49,29 @@
         </div>
       </div>
     </header>
-
-    <main class="container">
-      <section class="hero">
-        <div class="hero-copy">
-          <span class="eyebrow red">CENTRAL COSTALOG</span>
-          <h2>Certificados</h2>
-          <p>Consulte, visualize senhas e baixe os documentos disponíveis no portal.</p>
-        </div>
-        <div class="stats-wrap">
-          <div class="stats-card"><span>Documentos disponíveis</span><strong id="certificateCount">0</strong></div>
-          <div class="stats-card accent"><span>Seu nível de acesso</span><strong id="accessLevel">Usuário</strong></div>
-        </div>
-      </section>
-
-      <section class="toolbar">
-        <div class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Pesquisar por nome do certificado..."></div>
-        <select id="statusFilter" aria-label="Filtrar por status">
-          <option value="all">Todos os certificados</option><option value="valid">Válidos</option><option value="expiring">Vencendo em 30 dias</option><option value="expired">Expirados</option>
-        </select>
-      </section>
-
-      <section id="certificateGrid" class="certificate-grid"></section>
-      <div id="emptyState" class="empty-state"><div class="empty-icon">✓</div><h3>Nenhum certificado cadastrado</h3><p>Os documentos cadastrados aparecerão aqui.</p></div>
+    <main class="portal-main">
+      <div class="container">
+        <section class="hero">
+          <div class="hero-copy">
+            <span class="eyebrow red">CENTRAL COSTALOG</span>
+            <h2>Certificados</h2>
+            <p>Consulte, visualize senhas e baixe os documentos disponíveis no portal.</p>
+          </div>
+          <div class="stats-wrap">
+            <div class="stats-card"><span>Documentos disponíveis</span><strong id="certificateCount">0</strong></div>
+            <div class="stats-card accent"><span>Seu nível de acesso</span><strong id="accessLevel">Usuário</strong></div>
+          </div>
+        </section>
+        <section class="toolbar">
+          <div class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Pesquisar por nome do certificado..."></div>
+          <select id="statusFilter" aria-label="Filtrar por status">
+            <option value="all">Todos os certificados</option><option value="valid">Válidos</option><option value="expiring">Vencendo em 30 dias</option><option value="expired">Expirados</option>
+          </select>
+        </section>
+        <section id="certificateGrid" class="certificate-grid"></section>
+        <div id="emptyState" class="empty-state"><div class="empty-icon">✓</div><h3>Nenhum certificado cadastrado</h3><p>Os documentos cadastrados aparecerão aqui.</p></div>
+      </div>
     </main>
-
     <footer class="footer"><img src="assets/logo-costalog.svg?v=4" alt="Costalog"><span>Uso interno • Certificados Costalog</span></footer>
   </div>
 
@@ -88,8 +85,8 @@
       <form id="certificateForm">
         <div class="form-grid">
           <div class="field full"><label for="certName">Nome do certificado *</label><input id="certName" required placeholder="Ex.: Certificado de Transporte de Produtos Perigosos"></div>
-          <div class="field"><label for="certPassword">Senha do certificado *</label><input id="certPassword" required placeholder="Senha usada para abrir o PDF"></div>
-          <div class="field"><label for="certFile">Arquivo PDF <span id="fileRequiredLabel">*</span></label><input id="certFile" type="file" accept="application/pdf"><small id="fileHelp">Somente arquivos PDF de até 4 MB.</small></div>
+          <div class="field"><label for="certPassword">Senha do certificado *</label><input id="certPassword" required placeholder="Senha usada para abrir o arquivo"></div>
+          <div class="field"><label for="certFile">Arquivo do certificado <span id="fileRequiredLabel">*</span></label><input id="certFile" type="file" accept=".pfx,.p12,application/x-pkcs12,application/pkcs12,application/octet-stream"><small id="fileHelp">Selecione o arquivo do certificado digital (.PFX ou .P12), de até 4 MB.</small></div>
           <div class="field"><label for="issueDate">Data de emissão *</label><input id="issueDate" type="date" required></div>
           <div class="field"><label for="expiryDate">Data de expiração *</label><input id="expiryDate" type="date" required></div>
         </div>
