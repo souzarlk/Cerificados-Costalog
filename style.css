@@ -49,3 +49,26 @@
 .download-btn{min-width:0}
 @media(max-width:1100px){.hero{display:block}.stats-wrap{margin-top:24px}.certificate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.container{padding:28px 16px 60px}.hero h2{font-size:38px}.stats-wrap{grid-template-columns:repeat(2,minmax(0,1fr))}.stats-card{min-height:92px}.certificate-grid{grid-template-columns:1fr}.cert-card{min-height:0}.cert-card h3{min-height:0}.toolbar{flex-direction:column}.toolbar select{min-height:46px}.cert-meta>div{grid-template-columns:82px minmax(0,1fr)}}
+
+/* Polimento da central de certificados */
+.all-stat{font:inherit;text-align:left;cursor:pointer;position:relative;background:linear-gradient(145deg,#fff,#fafafa);transition:transform .2s,box-shadow .2s,border-color .2s}
+.all-stat small{display:block;margin-top:7px;color:#999;font-size:9px;font-weight:750;white-space:nowrap}
+.all-stat:hover{transform:translateY(-3px);border-color:#cfcfcf;box-shadow:0 14px 32px rgba(0,0,0,.09)}
+.all-stat.selected{box-shadow:0 0 0 2px #222,0 14px 32px rgba(0,0,0,.08)}
+.status-card{appearance:none}
+.hero{align-items:stretch}
+.hero-copy{display:flex;flex-direction:column;justify-content:center;padding:8px 0}
+.stats-wrap{align-items:stretch}
+.stats-card{min-height:100px;display:flex;flex-direction:column;justify-content:center}
+.certificate-grid{align-items:stretch}
+.cert-card{min-height:330px;padding:22px}
+.cert-top{min-height:46px}
+.cert-card h3{min-height:46px;display:flex;align-items:flex-start;margin-top:18px}
+.cert-meta{display:grid;gap:8px;line-height:1.45;margin-top:3px}
+.cert-meta>div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:6px;align-items:start}
+.cert-meta strong{white-space:nowrap}
+.cert-password{min-height:43px;display:flex;align-items:center;gap:5px;margin-top:16px}
+.cert-actions{align-items:stretch}
+.download-btn,.edit-btn,.delete-btn{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+@media(max-width:1100px){.hero{display:block}.stats-wrap{margin-top:24px}.certificate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.container{padding:28px 16px 60px}.hero h2{font-size:38px}.stats-wrap{grid-template-columns:repeat(2,minmax(0,1fr))}.stats-card{min-height:92px}.certificate-grid{grid-template-columns:1fr}.cert-card{min-height:0}.cert-card h3{min-height:0}.toolbar{flex-direction:column}.toolbar select{min-height:46px}}
