@@ -126,11 +126,18 @@ function logout(){sessionStorage.removeItem(SESSION_KEY);currentRole=null;editin
 
 loginForm.addEventListener("submit",e=>{
   e.preventDefault();
-  const enteredPassword=passwordInput.value.trim();
-  if(enteredPassword===ADMIN_PASSWORD)currentRole="admin";
-  else if(enteredPassword===USER_PASSWORD)currentRole="user";
-  else{loginError.textContent="Senha incorreta. Verifique e tente novamente.";passwordInput.focus();return}
-  sessionStorage.setItem(SESSION_KEY,currentRole);loginError.textContent="";openApp();
+  loginError.textContent="";
+  try{
+    const enteredPassword=passwordInput.value.trim();
+    if(enteredPassword===ADMIN_PASSWORD)currentRole="admin";
+    else if(enteredPassword===USER_PASSWORD)currentRole="user";
+    else{loginError.textContent="Senha incorreta. Verifique e tente novamente.";passwordInput.focus();return}
+    try{sessionStorage.setItem(SESSION_KEY,currentRole)}catch{}
+    openApp();
+  }catch(err){
+    console.error("Erro ao entrar no portal:",err);
+    loginError.textContent="Não foi possível entrar no portal. Atualize a página (Ctrl + F5) e tente novamente.";
+  }
 });
 
 togglePassword.addEventListener("click",()=>{
