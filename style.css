@@ -25,3 +25,27 @@
 @media(max-width:1000px){.certificate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stats-wrap{grid-template-columns:repeat(2,minmax(0,1fr))}.stats-card.accent{display:none}}
 @media(max-width:650px){.login-screen{padding:105px 18px 72px}.login-brand{left:22px;top:23px;width:125px}.login-card{width:min(100%,500px);padding:34px 27px 28px;border-radius:21px}.login-card h1{font-size:31px}.login-footer{font-size:10px}.matrix-layer{opacity:.30}.topbar-inner{padding:11px 16px}.brand-lockup img{width:102px}.brand-lockup div{display:none}.top-actions{gap:4px}.role-badge{display:none}.outline-btn{font-size:11px;padding:9px}.ghost-btn{font-size:12px}.container{padding:30px 16px 60px}.hero{align-items:start;flex-direction:column}.hero h2{font-size:37px}.stats-wrap{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.stats-card{min-width:0}.stats-card.accent{display:none}.toolbar{flex-direction:column}.toolbar select{height:48px}.certificate-grid{grid-template-columns:1fr}.cert-actions{flex-wrap:wrap}.download-btn{min-width:100%}.edit-btn,.delete-btn{flex:1}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.modal-card{padding:22px}}.notification-btn{position:relative;width:38px;height:38px;border:1px solid #444;border-radius:10px;background:#1e1e1e;color:#fff;font-size:16px}.notification-count{position:absolute;right:-5px;top:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--red);color:#fff;font-size:9px;font-weight:900;display:grid;place-items:center}.notification-panel{position:fixed;right:24px;top:72px;width:min(390px,calc(100vw - 32px));max-height:420px;overflow:auto;z-index:40;background:#fff;border:1px solid #ddd;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,.2)}.notification-head{display:flex;justify-content:space-between;align-items:center;padding:15px 17px;border-bottom:1px solid #eee}.notification-head button{border:0;background:none;font-size:22px;color:#777}.notification-item{padding:13px 17px;border-bottom:1px solid #eee;display:flex;flex-direction:column;gap:4px}.notification-item strong{font-size:12px}.notification-item span{font-size:11px;color:#777}.notification-empty{padding:28px 17px;text-align:center;color:#888;font-size:12px}@media(max-width:650px){.notification-btn{width:34px;height:34px}.notification-panel{right:16px;top:62px}}
 .cert-document-id{font-weight:800}.cert-document-id strong{font-weight:900}
+
+/* Refinamento visual — central de certificados */
+.all-stat{font:inherit;text-align:left;cursor:pointer;position:relative;transition:transform .2s,box-shadow .2s,border-color .2s;background:linear-gradient(145deg,#fff,#fafafa)}
+.all-stat small{display:block;margin-top:7px;color:#a0a0a0;font-size:9px;font-weight:700;white-space:nowrap}
+.all-stat:hover{transform:translateY(-2px);border-color:#cfcfcf;box-shadow:0 14px 32px rgba(0,0,0,.09)}
+.all-stat.selected{box-shadow:0 0 0 2px #222,0 14px 32px rgba(0,0,0,.08)}
+.status-card{appearance:none}
+.hero{align-items:stretch}
+.hero-copy{display:flex;flex-direction:column;justify-content:center;padding:8px 0}
+.stats-wrap{align-items:stretch}
+.stats-card{min-height:100px;display:flex;flex-direction:column;justify-content:center}
+.certificate-grid{align-items:stretch}
+.cert-card{min-height:330px;padding:22px}
+.cert-top{min-height:46px}
+.cert-card h3{min-height:45px;display:flex;align-items:flex-start;margin-top:18px}
+.cert-meta{display:grid;gap:7px;line-height:1.45;margin-top:3px}
+.cert-meta>div{display:grid;grid-template-columns:74px minmax(0,1fr);gap:5px;align-items:start}
+.cert-meta strong{white-space:nowrap}
+.cert-password{min-height:43px;display:flex;align-items:center;gap:5px;margin-top:16px}
+.cert-actions{align-items:stretch}
+.download-btn,.edit-btn,.delete-btn{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+.download-btn{min-width:0}
+@media(max-width:1100px){.hero{display:block}.stats-wrap{margin-top:24px}.certificate-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.container{padding:28px 16px 60px}.hero h2{font-size:38px}.stats-wrap{grid-template-columns:repeat(2,minmax(0,1fr))}.stats-card{min-height:92px}.certificate-grid{grid-template-columns:1fr}.cert-card{min-height:0}.cert-card h3{min-height:0}.toolbar{flex-direction:column}.toolbar select{min-height:46px}.cert-meta>div{grid-template-columns:82px minmax(0,1fr)}}
