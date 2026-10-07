@@ -2,15 +2,20 @@ const ADMIN_PASSWORD=String.fromCharCode(77,97,116,105,108,104,97,64,50,48,50,54
 const USER_PASSWORD=String.fromCharCode(67,111,115,116,97,108,111,103,64,50,48,50,54);
 const STORAGE_KEY="costalog_certificates_v1";
 const SESSION_KEY="costalog_role";
+const THEME_KEY="costalog_theme";
 
 const $=s=>document.querySelector(s);
 const loginScreen=$("#loginScreen"), app=$("#app"), loginForm=$("#loginForm"), passwordInput=$("#accessPassword"), togglePassword=$("#togglePassword"), loginError=$("#loginError");
 const certificateGrid=$("#certificateGrid"), emptyState=$("#emptyState"), certificateCount=$("#certificateCount"), validCount=$("#validCount"), expiringCount=$("#expiringCount"), expiredCount=$("#expiredCount"), searchInput=$("#searchInput"), statusFilter=$("#statusFilter");
 const modal=$("#adminModal"), certificateForm=$("#certificateForm"), saveError=$("#saveError"), modalTitle=$("#modalTitle"), modalSubtitle=$("#modalSubtitle"), certFile=$("#certFile"), fileRequiredLabel=$("#fileRequiredLabel"), fileHelp=$("#fileHelp"), issueDateDisplay=$("#issueDateDisplay"), expiryDateDisplay=$("#expiryDateDisplay");
-const roleBadge=$("#roleBadge"), accessLevel=$("#accessLevel");
+const roleBadge=$("#roleBadge"), accessLevel=$("#accessLevel"), themeToggle=$("#themeToggle"), themeIcon=$("#themeIcon");
 let currentRole=sessionStorage.getItem(SESSION_KEY)||null, editingId=null, certificates=loadCertificates();
 
 function loadCertificates(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]")}catch{return[]}}
+function applyTheme(theme){const dark=theme==="dark";document.body.classList.toggle("dark-mode",dark);if(themeIcon)themeIcon.textContent=dark?"☀":"☾";if(themeToggle){themeToggle.title=dark?"Usar modo claro":"Usar modo escuro";themeToggle.setAttribute("aria-label",themeToggle.title)}const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute("content",dark?"#111111":"#e30613");}
+function loadTheme(){try{return localStorage.getItem(THEME_KEY)||"light"}catch{return"light"}}
+function toggleTheme(){const next=document.body.classList.contains("dark-mode")?"light":"dark";try{localStorage.setItem(THEME_KEY,next)}catch{}applyTheme(next)}
+applyTheme(loadTheme());
 function saveCertificates(){localStorage.setItem(STORAGE_KEY,JSON.stringify(certificates))}
 function isAdmin(){currentRole=sessionStorage.getItem(SESSION_KEY)||currentRole;return currentRole==="admin"}
 function formatDate(v){if(!v)return"—";return new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC"}).format(new Date(v+"T00:00:00Z"))}
@@ -148,7 +153,7 @@ togglePassword.addEventListener("click",()=>{
   togglePassword.setAttribute("title",showing?"Mostrar senha":"Ocultar senha");
 });
 
-$("#logoutBtn").addEventListener("click",logout);$("#notificationBtn").addEventListener("click",()=>$("#notificationPanel").classList.toggle("hidden"));$("#closeNotifications").addEventListener("click",()=>$("#notificationPanel").classList.add("hidden"));
+themeToggle.addEventListener("click",toggleTheme);$("#logoutBtn").addEventListener("click",logout);$("#notificationBtn").addEventListener("click",()=>$("#notificationPanel").classList.toggle("hidden"));$("#closeNotifications").addEventListener("click",()=>$("#notificationPanel").classList.add("hidden"));
 
 function openCreateModal(){
   if(!isAdmin())return;
