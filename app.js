@@ -152,7 +152,7 @@ function openCreateModal(){
 function openEditModal(id){
   if(!isAdmin())return;
   const c=certificates.find(x=>x.id===id);if(!c)return;
-  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;certFile.value="";showDetectedDates(issueDate,expiryDate);
+  editingId=id;saveError.textContent="";$("#certName").value=c.name;$("#certPassword").value=c.password;certFile.value="";showDetectedDates(c.issueDate,c.expiryDate);
   certFile.required=false;fileRequiredLabel.textContent="";fileHelp.textContent="Deixe vazio para manter o arquivo atual. Ao trocar o PFX/P12, as datas de emissão e vencimento serão atualizadas automaticamente.";modalTitle.textContent="Editar certificado";modalSubtitle.textContent="As datas são controladas automaticamente pelo certificado.";modal.classList.remove("hidden");
 }
 
