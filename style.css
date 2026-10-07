@@ -19,8 +19,8 @@ button { cursor:pointer; }
 /* Login */
 .login-screen { min-height:100vh; display:grid; place-items:center; position:relative; padding:32px; background:linear-gradient(135deg,#080808 0%,#171717 55%,#050505 100%); overflow:hidden; }
 .login-screen::before { content:""; position:absolute; width:620px; height:620px; border-radius:50%; right:-240px; top:-250px; background:rgba(227,6,19,.16); filter:blur(4px); }
-.login-brand { position:absolute; top:34px; left:42px; width:190px; }
-.login-brand img { width:100%; height:auto; }
+.login-brand { position:absolute; top:34px; left:42px; width:210px; }
+.login-brand img { display:block; width:100%; height:auto; aspect-ratio:auto; object-fit:contain; }
 .login-card { width:min(460px,100%); background:#fff; border-radius:22px; padding:42px; box-shadow:0 30px 90px rgba(0,0,0,.42); position:relative; z-index:1; }
 .eyebrow { font-size:11px; letter-spacing:.18em; font-weight:800; color:#777; }
 .eyebrow.red { color:var(--red); }
@@ -40,7 +40,7 @@ button { cursor:pointer; }
 .topbar { background:var(--black); color:#fff; position:sticky; top:0; z-index:10; box-shadow:0 5px 25px rgba(0,0,0,.15); }
 .topbar-inner { max-width:1200px; margin:auto; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; gap:20px; }
 .brand-lockup { display:flex; align-items:center; gap:14px; }
-.brand-lockup img { width:115px; height:50px; object-fit:contain; }
+.brand-lockup img { display:block; width:145px; height:auto; aspect-ratio:auto; object-fit:contain; flex:0 0 auto; }
 .brand-lockup strong { display:block; font-size:15px; }
 .brand-lockup span { display:block; color:#aaa; font-size:11px; margin-top:2px; }
 .top-actions { display:flex; gap:10px; align-items:center; }
@@ -101,8 +101,8 @@ button { cursor:pointer; }
 .secondary-btn { border:1px solid #ddd; background:#fff; }
 @media (max-width:900px) { .certificate-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
 @media (max-width:650px) {
-  .login-brand{left:24px;top:24px;width:145px}.login-card{padding:28px}.login-screen{padding:18px}
-  .topbar-inner{padding:13px 16px}.brand-lockup div{display:none}.brand-lockup img{width:105px}.top-actions{gap:4px}.outline-btn{font-size:12px;padding:9px}.ghost-btn{font-size:12px}
+  .login-brand{left:24px;top:24px;width:160px}.login-card{padding:28px}.login-screen{padding:18px}
+  .topbar-inner{padding:13px 16px}.brand-lockup div{display:none}.brand-lockup img{width:125px;height:auto}.top-actions{gap:4px}.outline-btn{font-size:12px;padding:9px}.ghost-btn{font-size:12px}
   .container{padding:30px 16px 60px}.hero{align-items:start;flex-direction:column}.hero h2{font-size:34px}.stats-card{width:100%}
   .toolbar{flex-direction:column}.toolbar select{height:48px}.certificate-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.modal-card{padding:22px}
 }
