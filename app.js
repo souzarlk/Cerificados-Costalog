@@ -5,7 +5,7 @@ const SESSION_KEY="costalog_role";
 
 const $=s=>document.querySelector(s);
 const loginScreen=$("#loginScreen"), app=$("#app"), loginForm=$("#loginForm"), passwordInput=$("#accessPassword"), togglePassword=$("#togglePassword"), loginError=$("#loginError");
-const certificateGrid=$("#certificateGrid"), emptyState=$("#emptyState"), certificateCount=$("#certificateCount"), searchInput=$("#searchInput"), statusFilter=$("#statusFilter");
+const certificateGrid=$("#certificateGrid"), emptyState=$("#emptyState"), certificateCount=$("#certificateCount"), validCount=$("#validCount"), expiringCount=$("#expiringCount"), expiredCount=$("#expiredCount"), searchInput=$("#searchInput"), statusFilter=$("#statusFilter");
 const modal=$("#adminModal"), certificateForm=$("#certificateForm"), saveError=$("#saveError"), modalTitle=$("#modalTitle"), modalSubtitle=$("#modalSubtitle"), certFile=$("#certFile"), fileRequiredLabel=$("#fileRequiredLabel"), fileHelp=$("#fileHelp");
 const roleBadge=$("#roleBadge"), accessLevel=$("#accessLevel");
 let currentRole=sessionStorage.getItem(SESSION_KEY)||null, editingId=null, certificates=loadCertificates();
@@ -37,6 +37,12 @@ function render(){
   const term=searchInput.value.trim().toLowerCase(), filter=statusFilter.value;
   const filtered=certificates.filter(c=>{const s=getStatus(c).key;return(!term||c.name.toLowerCase().includes(term))&&(filter==="all"||s===filter)}).sort((a,b)=>a.name.localeCompare(b.name,"pt-BR",{sensitivity:"base"}));
   certificateCount.textContent=certificates.length;
+  const counts={valid:0,expiring:0,expired:0};
+  certificates.forEach(c=>{counts[getStatus(c).key]++});
+  validCount.textContent=counts.valid;
+  expiringCount.textContent=counts.expiring;
+  expiredCount.textContent=counts.expired;
+  document.querySelectorAll("[data-status-card]").forEach(card=>card.classList.toggle("selected",card.dataset.statusCard===filter));
   certificateGrid.innerHTML=filtered.map(c=>{
     const status=getStatus(c);
     const adminActions=isAdmin()
@@ -87,6 +93,13 @@ function openEditModal(id){
 $("#openAdmin").addEventListener("click",openCreateModal);
 document.querySelectorAll("[data-close-modal]").forEach(e=>e.addEventListener("click",()=>modal.classList.add("hidden")));
 searchInput.addEventListener("input",render);statusFilter.addEventListener("change",render);
+document.querySelectorAll("[data-status-card]").forEach(card=>card.addEventListener("click",()=>{
+  const target=card.dataset.statusCard;
+  searchInput.value="";
+  statusFilter.value=target;
+  render();
+  document.querySelector(".toolbar").scrollIntoView({behavior:"smooth",block:"start"});
+}));
 
 certificateGrid.addEventListener("click",e=>{
   const editId=e.target.dataset.edit,deleteId=e.target.dataset.delete;
