@@ -44,12 +44,12 @@
         </div>
         <div class="top-actions">
           <span id="roleBadge" class="role-badge">USUÁRIO</span>
-          <button id="openAdmin" class="outline-btn admin-only">+ Adicionar certificado</button>
+          <button id="notificationBtn" class="notification-btn" type="button" title="Notificações">🔔<span id="notificationCount" class="notification-count hidden">0</span></button><button id="openAdmin" class="outline-btn admin-only">+ Adicionar certificado</button>
           <button id="logoutBtn" class="ghost-btn">Sair</button>
         </div>
       </div>
     </header>
-    <main class="portal-main">
+    <div id="notificationPanel" class="notification-panel hidden"><div class="notification-head"><strong>Notificações</strong><button id="closeNotifications" type="button">×</button></div><div id="notificationList"></div></div><main class="portal-main">
       <div class="container">
         <section class="hero">
           <div class="hero-copy">
