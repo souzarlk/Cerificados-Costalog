@@ -31,6 +31,7 @@ const rawPool = mysql.createPool({
 rawPool.on("connection", connection => {
   connection.query("SET time_zone = '+00:00'");
 });
+rawPool.on("error", error => console.error("Erro inesperado no pool MariaDB:", error.message));
 
 function normalizeSql(sql) {
   return String(sql);
