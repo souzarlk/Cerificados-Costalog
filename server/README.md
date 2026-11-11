@@ -33,7 +33,7 @@ Para implantação em Windows Server, consulte `WINDOWS-SERVER-DEPLOYMENT.md`.
 1. Copie a pasta `server/` para o servidor da empresa.
 2. Crie um banco MariaDB e um usuário exclusivo para o AGENTE COSTALOG, com permissões mínimas.
 3. Copie `.env.example` para `.env` e preencha os valores reais fora do Git.
-4. Configure `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `ALLOWED_ORIGINS` e as chaves de assinatura.
+4. Configure `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `CENTRAL_ADMIN_AUTH_SECRET`, `ALLOWED_ORIGINS` e as chaves de assinatura.
 5. Instale dependências com `npm install` (o arquivo de lock será gerado no servidor).
 6. Execute `npm run db:migrate` e depois `npm run db:smoke`. Em Docker Compose, a API usa o hostname `mariadb` na rede interna; fora do Docker, `DB_HOST` deve apontar para o endereço privado do MariaDB da empresa.
 7. Configure `CENTRAL_ADMIN_AUTH_SECRET` com o mesmo valor de `ADMIN_AUTH_SECRET` da API da Central de Notas Fiscais.
@@ -59,7 +59,9 @@ Execute `npm run keys:generate` em ambiente seguro. Guarde `POLICY_SIGNING_PRIVA
 
 O painel usa o mesmo usuário e senha da Central de Notas Fiscais Costalog. O navegador autentica em `/api/auth/login` da Central Fiscal e recebe o token HMAC-SHA256 de 12 horas; a API do AGENTE COSTALOG valida a assinatura com `CENTRAL_ADMIN_AUTH_SECRET`, que precisa ser idêntico ao `ADMIN_AUTH_SECRET` privado da Central. A API cria um identificador interno estável apenas para trilha de auditoria. Não existe um segundo usuário/senha do AGENTE. O token permanece somente em memória no painel. Ao cadastrar, remover, ativar ou desativar um site, a API cria automaticamente uma nova revisão assinada na mesma transação; os agentes buscam a revisão na sincronização seguinte (intervalo padrão de 45 segundos).
 
-O acesso administrativo é centralizado na credencial única da Central de Notas Fiscais; não execute `npm run admin:create` para uso normal do painel.\n\nO cadastro de dispositivos usa token de enrollment de uso único, criado em `POST /api/v1/admin/agent/enrollment-tokens`. O token do dispositivo é exibido somente uma vez e deverá ser protegido localmente pelo Windows Agent usando DPAPI e ACL.
+O acesso administrativo é centralizado na credencial única da Central de Notas Fiscais; não execute `npm run admin:create` para uso normal do painel.
+
+O cadastro de dispositivos usa token de enrollment de uso único, criado em `POST /api/v1/admin/agent/enrollment-tokens`. O token do dispositivo é exibido somente uma vez e deverá ser protegido localmente pelo Windows Agent usando DPAPI e ACL.
 
 ## Endpoints
 
