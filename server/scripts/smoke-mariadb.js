@@ -41,6 +41,13 @@ try {
     ["a".repeat(64), id, 10]
   );
 
+  const site = await client.query("SELECT id,enabled FROM agent_sites WHERE hostname=?", [hostname]);
+  if (site.rowCount !== 1 || !/^[0-9a-f-]{36}$/i.test(site.rows[0].id) || site.rows[0].enabled !== true)
+    throw new Error("MariaDB UUID default or boolean normalization failed.");
+
+  const timezone = await client.query("SELECT @@session.time_zone AS timezone");
+  if (timezone.rows[0].timezone !== "+00:00") throw new Error("MariaDB session timezone was not set to UTC.");
+
   const policy = await client.query("SELECT payload FROM agent_policies WHERE revision=?", [991337]);
   if (policy.rowCount !== 1 || policy.rows[0].payload.revision !== 991337) throw new Error("MariaDB JSON payload round-trip failed.");
   const event = await client.query("SELECT metadata FROM agent_events WHERE domain=?", [hostname]);
