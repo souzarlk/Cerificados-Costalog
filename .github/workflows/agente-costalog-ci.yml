@@ -55,6 +55,11 @@ jobs:
           node --check scripts/migrate.js
           node --check scripts/create-admin.js
           node --check scripts/generate-policy-keys.js
+      - name: Check portal JavaScript
+        run: |
+          node --check agente-costalog-config.js
+          node --check agente-costalog-api.js
+          node --check agente-costalog.js
       - name: Check browser extension
         run: |
           node --check browser-extension/service-worker.js
