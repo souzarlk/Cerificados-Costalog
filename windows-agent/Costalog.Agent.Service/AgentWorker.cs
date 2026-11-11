@@ -79,7 +79,7 @@ public sealed class AgentWorker : BackgroundService
         {
             enrollmentToken = AgentConfigStore.Unprotect(config.EnrollmentTokenProtected),
             deviceName = Environment.MachineName,
-            windowsUsername = Environment.UserName,
+            windowsUsername = "",
             osVersion = Environment.OSVersion.VersionString,
             agentVersion = config.AgentVersion,
             installMode = config.InstallMode
@@ -124,6 +124,8 @@ public sealed class AgentWorker : BackgroundService
         using var document = PolicyVerifier.VerifyEnvelope(envelope, config.PolicyPublicKeyPem);
         var root = document.RootElement;
         var expiry = PolicyVerifier.ReadExpiry(root);
+        if (envelope.Revision < config.LastPolicyRevision)
+            throw new InvalidDataException("A API tentou fornecer uma revisão de política anterior à já aceita.");
         var now = DateTimeOffset.UtcNow;
         if (expiry <= now) throw new InvalidDataException("Política expirada.");
         if (!root.TryGetProperty("revision", out var revisionValue) || revisionValue.GetInt32() != envelope.Revision)
@@ -141,6 +143,8 @@ public sealed class AgentWorker : BackgroundService
             .ToArray();
         var serverMode = device.GetProperty("installMode").GetString() ?? config.InstallMode;
         if (serverMode != config.InstallMode) throw new InvalidDataException("O modo registrado no servidor diverge do modo desta instalação.");
+        config.LastPolicyRevision = envelope.Revision;
+        AgentConfigStore.Save(config);
         await MarkPolicyStateAsync("valid", hosts, envelope.Revision, expiry, token);
         _logger.LogInformation("Política {Revision} validada. {Count} destinos.", envelope.Revision, hosts.Length);
     }
