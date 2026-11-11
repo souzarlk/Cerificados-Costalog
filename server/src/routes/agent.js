@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { pool, query } from "../db.js";
 import { newOpaqueToken, hashToken, signPolicy } from "../security.js";
@@ -20,7 +21,10 @@ async function requireAgent(req,res,next) {
     const header=req.get("authorization")||"";
     const token=header.startsWith("Bearer ")?header.slice(7):"";
     if(!token)return res.status(401).json({error:"unauthorized",message:"Credencial do dispositivo necessária."});
-    const result=await query("SELECT id,device_name,install_mode,status,policy_revision FROM agent_devices WHERE token_hash=$1",[hashToken(token)]);
+    const result=await query(
+      "SELECT id,device_name,install_mode,status,policy_revision FROM agent_devices WHERE token_hash=?",
+      [hashToken(token)]
+    );
     const device=result.rows[0];
     if(!device||device.status!=="active")return res.status(401).json({error:"device_revoked",message:"Dispositivo não autorizado ou revogado."});
     req.device=device;
@@ -33,21 +37,26 @@ router.post("/enroll", async (req,res,next) => {
   try {
     const input=enrollmentSchema.parse(req.body);
     const deviceToken=newOpaqueToken(48);
+    const deviceId=randomUUID();
     await client.query("BEGIN");
     const tokenResult=await client.query(
-      "UPDATE enrollment_tokens SET used_at=NOW() WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() RETURNING id",
+      "UPDATE enrollment_tokens SET used_at=NOW(3) WHERE token_hash=? AND used_at IS NULL AND expires_at>NOW(3)",
       [hashToken(input.enrollmentToken)]
     );
-    if(!tokenResult.rowCount){await client.query("ROLLBACK");return res.status(401).json({error:"invalid_enrollment_token",message:"Token de instalação inválido, expirado ou já utilizado."});}
-    const inserted=await client.query(
-      "INSERT INTO agent_devices(device_name,windows_username,os_version,agent_version,install_mode,token_hash,status) VALUES($1,$2,$3,$4,$5,$6,'active') RETURNING id,device_name AS \"deviceName\",install_mode AS \"installMode\",status",
-      [input.deviceName,input.windowsUsername,input.osVersion,input.agentVersion,input.installMode,hashToken(deviceToken)]
+    if(!tokenResult.rowCount){
+      await client.query("ROLLBACK");
+      return res.status(401).json({error:"invalid_enrollment_token",message:"Token de instalação inválido, expirado ou já utilizado."});
+    }
+    await client.query(
+      "INSERT INTO agent_devices(id,device_name,windows_username,os_version,agent_version,install_mode,token_hash,status) VALUES(?,?,?,?,?,?,?,'active')",
+      [deviceId,input.deviceName,input.windowsUsername,input.osVersion,input.agentVersion,input.installMode,hashToken(deviceToken)]
     );
-    const device=inserted.rows[0];
-    await client.query("INSERT INTO agent_events(device_id,event_type,title,message,metadata) VALUES($1,$2,$3,$4,$5::jsonb)",
-      [device.id,"device_enrolled","Agente instalado",device.deviceName,JSON.stringify({installMode:device.installMode,agentVersion:input.agentVersion})]);
+    await client.query(
+      "INSERT INTO agent_events(device_id,event_type,title,message,metadata) VALUES(?,?,?,?,?)",
+      [deviceId,"device_enrolled","Agente instalado",input.deviceName,JSON.stringify({installMode:input.installMode,agentVersion:input.agentVersion})]
+    );
     await client.query("COMMIT");
-    res.status(201).json({deviceId:device.id,deviceToken,deviceName:device.deviceName,installMode:device.installMode,warning:"Token exibido uma única vez. O agente o protege localmente com DPAPI."});
+    res.status(201).json({deviceId,deviceToken,deviceName:input.deviceName,installMode:input.installMode,warning:"Token exibido uma única vez. O agente o protege localmente com DPAPI."});
   } catch(e) {
     try{await client.query("ROLLBACK")}catch{}
     next(e);
@@ -63,8 +72,8 @@ router.post("/heartbeat", async (req,res,next) => {
       policyRevision:z.number().int().min(0).optional().default(0)
     }).strict().parse(req.body || {});
     await query(
-      "UPDATE agent_devices SET last_seen_at=NOW(),agent_version=COALESCE(NULLIF($2,''),agent_version),policy_revision=GREATEST(policy_revision,$3) WHERE id=$1",
-      [req.device.id,input.agentVersion,input.policyRevision]
+      "UPDATE agent_devices SET last_seen_at=NOW(3),agent_version=COALESCE(NULLIF(?,''),agent_version),policy_revision=GREATEST(policy_revision,?) WHERE id=?",
+      [input.agentVersion,input.policyRevision,req.device.id]
     );
     res.json({ok:true,serverTime:new Date().toISOString(),policyRevisionAccepted:input.policyRevision});
   } catch(e) { next(e); }
@@ -83,9 +92,9 @@ router.get("/policy", async (req,res,next) => {
       expiresAt:new Date(now+Math.max(1,Number(process.env.POLICY_VALIDITY_HOURS||24))*60*60*1000).toISOString()
     };
     const signed=signPolicy(payload);
-    await query("UPDATE agent_devices SET last_seen_at=NOW() WHERE id=$1",[req.device.id]);
+    await query("UPDATE agent_devices SET last_seen_at=NOW(3) WHERE id=?",[req.device.id]);
     res.set("Cache-Control","no-store");
-    res.json({revision:row.revision,status:"published",...signed});
+    res.json({revision:Number(row.revision),status:"published",...signed});
   } catch(e) { next(e); }
 });
 
@@ -98,14 +107,16 @@ router.post("/events", async (req,res,next) => {
       domain:z.string().max(253).optional().default(""),
       metadata:z.record(z.string(),z.unknown()).optional().default({})
     }).strict().parse(req.body);
-    const result=await query(
-      "INSERT INTO agent_events(device_id,event_type,title,message,domain,metadata) VALUES($1,$2,$3,$4,$5,$6::jsonb) RETURNING id,created_at AS \"createdAt\"",
-      [req.device.id,input.eventType,input.title,input.message,input.domain,JSON.stringify(input.metadata)]
+    const eventId=randomUUID();
+    await query(
+      "INSERT INTO agent_events(id,device_id,event_type,title,message,domain,metadata) VALUES(?,?,?,?,?,?,?)",
+      [eventId,req.device.id,input.eventType,input.title,input.message,input.domain,JSON.stringify(input.metadata)]
     );
+    const created=await query("SELECT id,created_at AS createdAt FROM agent_events WHERE id=?",[eventId]);
     if (input.eventType === "browser_navigation_blocked") {
-      await sendSecurityAlert({ ...input, deviceName: req.device.device_name, createdAt: result.rows[0].createdAt });
+      await sendSecurityAlert({ ...input, deviceName: req.device.device_name, createdAt: created.rows[0]?.createdAt });
     }
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(created.rows[0]);
   } catch(e) { next(e); }
 });
 
