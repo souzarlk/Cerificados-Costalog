@@ -40,7 +40,7 @@ return 0;
 static object ReadLocalState()
 {
     var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Costalog", "Agent");
-    var statePath = Path.Combine(root, "agent-public-state.json");
+    var statePath = Path.Combine(root, "Public", "agent-public-state.json");
     if (!File.Exists(statePath))
         return new { status = "missing", installMode = "certificate-and-web", revision = 0, allowedDestinations = Array.Empty<string>() };
     using var doc = JsonDocument.Parse(File.ReadAllText(statePath));
