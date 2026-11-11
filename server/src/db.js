@@ -27,6 +27,11 @@ const rawPool = mysql.createPool({
   ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: true } : undefined
 });
 
+// Store/read every DATETIME consistently as UTC even when the MariaDB host uses another local timezone.
+rawPool.on("connection", connection => {
+  connection.query("SET time_zone = '+00:00'");
+});
+
 function normalizeSql(sql) {
   return String(sql);
 }
