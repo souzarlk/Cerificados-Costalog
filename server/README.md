@@ -23,9 +23,10 @@ Para implantação em Windows Server, consulte `WINDOWS-SERVER-DEPLOYMENT.md`.
 4. Execute `docker compose up -d mariadb` e aguarde o MariaDB ficar saudável.
 5. Execute `docker compose build api`.
 6. Execute `docker compose run --rm api npm run db:migrate`.
-7. Execute `docker compose run --rm api npm run admin:create` para criar o primeiro administrador. Defina `BOOTSTRAP_ADMIN_EMAIL` real e uma senha forte com pelo menos 14 caracteres no `.env`.
-8. Execute `docker compose up -d api`.
-9. Configure IIS/Nginx/proxy corporativo para encaminhar HTTPS para `127.0.0.1:8080`; não exponha a porta 8080 nem a porta 3306 do MariaDB à internet.
+7. Execute `docker compose run --rm api npm run db:smoke` para testar a conexão e as operações críticas do MariaDB.
+8. Execute `docker compose run --rm api npm run admin:create` para criar o primeiro administrador. Defina `BOOTSTRAP_ADMIN_EMAIL` real e uma senha forte com pelo menos 14 caracteres no `.env`.
+9. Execute `docker compose up -d api`.
+10. Configure IIS/Nginx/proxy corporativo para encaminhar HTTPS para `127.0.0.1:8080`; não exponha a porta 8080 nem a porta 3306 do MariaDB à internet.
 
 ### Execução direta com Node.js
 
@@ -75,7 +76,7 @@ Veja `../api-contract/openapi.yaml` para o contrato completo.
 - `POST /api/v1/agent/enroll`, `POST /api/v1/agent/heartbeat`
 - `GET /api/v1/agent/policy`, `POST /api/v1/agent/events`
 
-## Alertas imediatos à TI
+## Alertas de bloqueio à TI
 
 Configure SECURITY_ALERT_WEBHOOK_URL com um endpoint HTTPS de webhook aprovado pela empresa. Quando um agente reportar `browser_navigation_blocked`, o backend grava o evento e envia um POST JSON ao webhook. O agente sincroniza a fila local em ciclos de aproximadamente 45 segundos; portanto, a notificação depende desse ciclo e da disponibilidade do webhook. Se não estiver configurado, o registro permanece no banco, mas não há notificação externa imediata. Mantenha essa URL somente no ambiente do servidor.
 
@@ -83,4 +84,6 @@ Configure SECURITY_ALERT_WEBHOOK_URL com um endpoint HTTPS de webhook aprovado p
 
 Os agentes consultam heartbeat e política a cada 45 segundos por padrão. O limite geral da API foi dimensionado para uma frota compartilhando o IP de saída; ajuste conforme quantidade real de máquinas e monitoramento.
 
-O CI valida a migração e operações reais de transação, `SELECT FOR UPDATE`, JSON, `DATE_ADD` e parâmetros preparados no MariaDB 11.4.\n\nO backend registra e distribui políticas assinadas. Isso, sozinho, ainda não garante controle total de cada forma de uso de um certificado A1. O enforcement de TLS cliente, assinatura documental e upload de PFX tem fluxos distintos e precisa ser homologado nos portais reais. O modo de navegação restrita depende também da extensão de navegador gerenciada pela TI.
+O CI valida a migração e operações reais de transação, `SELECT FOR UPDATE`, JSON, `TIMESTAMPADD` e parâmetros preparados no MariaDB 11.4.
+
+O backend registra e distribui políticas assinadas. Isso, sozinho, ainda não garante controle total de cada forma de uso de um certificado A1. O enforcement de TLS cliente, assinatura documental e upload de PFX tem fluxos distintos e precisa ser homologado nos portais reais. O modo de navegação restrita depende também da extensão de navegador gerenciada pela TI.
