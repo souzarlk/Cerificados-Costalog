@@ -19,9 +19,12 @@ public sealed class AgentConfig
 public static class AgentConfigStore
 {
     public static string Root => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Costalog", "Agent");
-    public static string ConfigPath => Path.Combine(Root, "agent.json");
-    public static string PublicStatePath => Path.Combine(Root, "agent-public-state.json");
-    public static string PolicyPath => Path.Combine(Root, "policy.json");
+    public static string PrivateRoot => Path.Combine(Root, "Private");
+    public static string PublicRoot => Path.Combine(Root, "Public");
+    public static string PendingEventsRoot => Path.Combine(Root, "pending-events");
+    public static string ConfigPath => Path.Combine(PrivateRoot, "agent.json");
+    public static string PublicStatePath => Path.Combine(PublicRoot, "agent-public-state.json");
+    public static string PolicyPath => Path.Combine(PrivateRoot, "policy.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
@@ -35,7 +38,7 @@ public static class AgentConfigStore
 
     public static void Save(AgentConfig config)
     {
-        Directory.CreateDirectory(Root);
+        Directory.CreateDirectory(PrivateRoot);
         var temp = ConfigPath + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(config, JsonOptions), new UTF8Encoding(false));
         File.Move(temp, ConfigPath, true);
@@ -56,7 +59,7 @@ public static class AgentConfigStore
 
     public static void WritePublicState(AgentPublicState state)
     {
-        Directory.CreateDirectory(Root);
+        Directory.CreateDirectory(PublicRoot);
         var temp = PublicStatePath + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(state, JsonOptions), new UTF8Encoding(false));
         File.Move(temp, PublicStatePath, true);
