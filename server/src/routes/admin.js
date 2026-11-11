@@ -57,6 +57,21 @@ router.get("/devices", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+
+router.patch("/devices/:deviceId/status", requireAdminWrite, async (req, res, next) => {
+  try {
+    const input = z.object({ status: z.enum(["active","disabled","revoked"]) }).strict().parse(req.body);
+    const result = await query(
+      "UPDATE agent_devices SET status=$2 WHERE id=$1 RETURNING id,device_name AS \"deviceName\",status",
+      [req.params.deviceId,input.status]
+    );
+    if (!result.rowCount) return res.status(404).json({ error:"not_found",message:"Dispositivo não encontrado." });
+    await query("INSERT INTO agent_events(device_id,event_type,title,message,metadata) VALUES($1,$2,$3,$4,$5::jsonb)",
+      [result.rows[0].id,"admin_device_status_changed","Estado do dispositivo alterado",input.status,JSON.stringify({adminId:req.admin.id})]);
+    res.json(result.rows[0]);
+  } catch (e) { next(e); }
+});
+
 router.get("/events", async (req, res, next) => {
   try {
     const limit = Math.min(200, Math.max(1, Number.parseInt(req.query.limit,10) || 50));
