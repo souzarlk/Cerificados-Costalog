@@ -366,9 +366,10 @@ paths:
               type: object
               properties:
                 agentVersion: { type: string, maxLength: 40 }
+                policyRevision: { type: integer, minimum: 0, description: Última revisão cuja assinatura e validade foram verificadas localmente }
       responses:
         "200":
-          description: Heartbeat aceito
+          description: Heartbeat aceito e revisão confirmada
           content:
             application/json:
               schema:
@@ -376,6 +377,7 @@ paths:
                 properties:
                   ok: { type: boolean }
                   serverTime: { type: string, format: date-time }
+                  policyRevisionAccepted: { type: integer }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
   /agent/policy:
