@@ -30,7 +30,7 @@ app.use(cors({
 app.use(express.json({limit:"64kb",strict:true}));
 app.use((req,res,next)=>{res.set("Cache-Control","no-store");next()});
 
-const globalLimiter=rateLimit({windowMs:60*1000,limit:120,standardHeaders:"draft-7",legacyHeaders:false});
+// Os agentes compartilham o IP de saída da empresa; o limite deve considerar a frota inteira.\nconst globalLimiter=rateLimit({windowMs:60*1000,limit:6000,standardHeaders:"draft-7",legacyHeaders:false});
 app.use("/api/",globalLimiter);
 app.get("/api/v1/health",async(req,res,next)=>{
   try{await query("SELECT 1");res.json({status:"ok",service:"agente-costalog-api",time:new Date().toISOString()});}
