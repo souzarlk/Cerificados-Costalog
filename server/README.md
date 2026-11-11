@@ -50,6 +50,7 @@ Execute `npm run keys:generate` em ambiente seguro. Guarde `POLICY_SIGNING_PRIVA
 - `POLICY_SIGNING_PRIVATE_KEY_B64`: chave RSA privada em PEM codificada em Base64.
 - `POLICY_SIGNING_KEY_ID`: identificador público da chave.
 - `ALLOWED_ORIGINS`: origens exatas do portal.
+- `TRUST_PROXY=true`: somente quando a API estiver atrás de proxy reverso confiável e a porta da API estiver restrita a loopback/rede privada.
 
 ## Autenticação
 
