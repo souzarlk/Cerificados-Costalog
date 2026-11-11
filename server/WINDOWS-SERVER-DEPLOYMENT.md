@@ -78,6 +78,8 @@ O apiPrefix permanece /api/v1. Se o IIS servir portal e API sob a mesma origem, 
 6. Teste Opção B em Chrome e Edge gerenciados com sites aprovados e não aprovados.
 7. Não declare Opção A pronta até homologar o provedor CNG/KSP e os portais reais.
 
-## Se o banco não for PostgreSQL
+## MariaDB: versão, permissões e validação
 
-O backend atual usa SQL e recursos específicos do PostgreSQL ($1, JSONB, RETURNING, transações/advisory lock). Para SQL Server ou outro fornecedor, será necessário desenvolver o adaptador e ajustar as consultas/migrações no backend. As telas e o contrato REST permanecem os mesmos.
+O schema foi preparado para MariaDB 10.6+ e o CI valida MariaDB 11.4. Use InnoDB e utf8mb4. O usuário da aplicação precisa criar/alterar tabelas durante a migração e operar as tabelas do banco; depois da migração, a TI pode reduzir permissões conforme a política interna.
+
+Antes de conectar o portal, execute `npm run db:migrate` e `npm run db:smoke`. Esses comandos validam o schema e operações de transação, bloqueio de linha, JSON, UUID e parâmetros preparados no banco.
