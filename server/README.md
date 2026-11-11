@@ -24,7 +24,7 @@ Para implantação em Windows Server, consulte `WINDOWS-SERVER-DEPLOYMENT.md`.
 5. Execute `docker compose build api`.
 6. Execute `docker compose run --rm api npm run db:migrate`.
 7. Execute `docker compose run --rm api npm run db:smoke` para testar a conexão e as operações críticas do MariaDB.
-8. Execute `docker compose run --rm api npm run admin:create` para criar o primeiro administrador. Defina `BOOTSTRAP_ADMIN_EMAIL` real e uma senha forte com pelo menos 14 caracteres no `.env`.
+8. Confirme que `CENTRAL_ADMIN_AUTH_SECRET` contém exatamente o mesmo valor privado de `ADMIN_AUTH_SECRET` configurado no Render da Central de Notas Fiscais.
 9. Execute `docker compose up -d api`.
 10. Configure IIS/Nginx/proxy corporativo para encaminhar HTTPS para `127.0.0.1:8080`; não exponha a porta 8080 nem a porta 3306 do MariaDB à internet.
 
@@ -36,7 +36,7 @@ Para implantação em Windows Server, consulte `WINDOWS-SERVER-DEPLOYMENT.md`.
 4. Configure `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `ALLOWED_ORIGINS` e as chaves de assinatura.
 5. Instale dependências com `npm install` (o arquivo de lock será gerado no servidor).
 6. Execute `npm run db:migrate` e depois `npm run db:smoke`. Em Docker Compose, a API usa o hostname `mariadb` na rede interna; fora do Docker, `DB_HOST` deve apontar para o endereço privado do MariaDB da empresa.
-7. Execute `npm run admin:create` para criar o primeiro administrador. Use senha forte e não a reutilize.
+7. Configure `CENTRAL_ADMIN_AUTH_SECRET` com o mesmo valor de `ADMIN_AUTH_SECRET` da API da Central de Notas Fiscais.
 8. Inicie com `npm start` e coloque um proxy HTTPS corporativo na frente.
 9. Restrinja a porta do banco à rede/host da API. O banco não deve ser publicado.
 
@@ -47,7 +47,8 @@ Execute `npm run keys:generate` em ambiente seguro. Guarde `POLICY_SIGNING_PRIVA
 ## Variáveis obrigatórias
 
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: conexão MariaDB privada.
-- `JWT_SECRET`: segredo aleatório com no mínimo 32 caracteres.
+- `JWT_SECRET`: segredo aleatório com no mínimo 32 caracteres (compatibilidade de tokens locais legados).
+- `CENTRAL_ADMIN_AUTH_SECRET`: o mesmo segredo `ADMIN_AUTH_SECRET` da API Central de Notas Fiscais, armazenado somente no ambiente privado da API do agente.
 - `POLICY_SIGNING_PRIVATE_KEY_B64`: chave RSA privada em PEM codificada em Base64.
 - `POLICY_SIGNING_KEY_ID`: identificador público da chave.
 - `ALLOWED_ORIGINS`: origens exatas do portal.
@@ -56,9 +57,9 @@ Execute `npm run keys:generate` em ambiente seguro. Guarde `POLICY_SIGNING_PRIVA
 
 ## Autenticação
 
-A primeira versão disponibiliza login administrativo por e-mail/senha, com hash bcrypt e JWT de curta duração. Credenciais são criadas por comando administrativo, nunca pelo front-end. O login corporativo SSO/OIDC poderá substituir esse mecanismo sem alterar os endpoints de negócio. No painel web, o access token permanece apenas em memória. Ao cadastrar, remover, ativar ou desativar um site, a API cria automaticamente uma nova revisão assinada na mesma transação; os agentes buscam a revisão na sincronização seguinte (intervalo padrão de 45 segundos).
+O painel usa o mesmo usuário e senha da Central de Notas Fiscais Costalog. O navegador autentica em `/api/auth/login` da Central Fiscal e recebe o token HMAC-SHA256 de 12 horas; a API do AGENTE COSTALOG valida a assinatura com `CENTRAL_ADMIN_AUTH_SECRET`, que precisa ser idêntico ao `ADMIN_AUTH_SECRET` privado da Central. A API cria um identificador interno estável apenas para trilha de auditoria. Não existe um segundo usuário/senha do AGENTE. O token permanece somente em memória no painel. Ao cadastrar, remover, ativar ou desativar um site, a API cria automaticamente uma nova revisão assinada na mesma transação; os agentes buscam a revisão na sincronização seguinte (intervalo padrão de 45 segundos).
 
-O cadastro de dispositivos usa token de enrollment de uso único, criado em `POST /api/v1/admin/agent/enrollment-tokens`. O token do dispositivo é exibido somente uma vez e deverá ser protegido localmente pelo Windows Agent usando DPAPI e ACL.
+O acesso administrativo é centralizado na credencial única da Central de Notas Fiscais; não execute `npm run admin:create` para uso normal do painel.\n\nO cadastro de dispositivos usa token de enrollment de uso único, criado em `POST /api/v1/admin/agent/enrollment-tokens`. O token do dispositivo é exibido somente uma vez e deverá ser protegido localmente pelo Windows Agent usando DPAPI e ACL.
 
 ## Endpoints
 
