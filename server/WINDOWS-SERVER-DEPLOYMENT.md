@@ -15,7 +15,7 @@ Este guia cobre a implantação da API e do portal no servidor da empresa. O nav
 - C:\Costalog\AGENTE-COSTALOG\portal\ — arquivos estáticos do portal.
 - C:\Costalog\AGENTE-COSTALOG\server\ — backend Node.js.
 - C:\Costalog\AGENTE-COSTALOG\secrets\ — segredos e chaves fora do repositório e sem acesso a usuários comuns.
-- Dados do PostgreSQL em volume próprio, com backup monitorado.
+- Dados do MariaDB em volume ou diretório próprio, com backup monitorado.
 
 ## API
 
