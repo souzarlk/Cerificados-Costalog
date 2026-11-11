@@ -66,6 +66,8 @@ $config = Get-Content $configPath -Raw | ConvertFrom-Json
 & icacls $configPath /inheritance:r /grant:r "SYSTEM:F" "BUILTIN\Administrators:F" "NT SERVICE\CostalogAgent:F" | Out-Null
 & icacls $pendingRoot /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "BUILTIN\Administrators:(OI)(CI)F" "NT SERVICE\CostalogAgent:(OI)(CI)M" "BUILTIN\Users:(OI)(CI)M" | Out-Null
 
+ $extensionId = ""
+ $updateUrl = ""
 if ($config.installMode -eq "certificate-and-web") {
   Write-Host ""
   Write-Warning "A Opção B necessita que a extensão corporativa CRX esteja publicada em HTTPS."
@@ -95,6 +97,8 @@ if ($config.installMode -eq "certificate-and-web") {
   Add-ForcedExtension "Microsoft Edge" "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist" $extensionId $updateUrl
 }
 
+$installInfo = @{ extensionId = $extensionId; updateUrl = $updateUrl; installMode = $config.installMode; installedAt = (Get-Date).ToUniversalTime().ToString("o") }
+$installInfo | ConvertTo-Json -Depth 4 | Set-Content -Path (Join-Path $dataRoot "agent-install-info.json") -Encoding UTF8
 & icacls $dataRoot /grant "BUILTIN\Users:(OI)(CI)RX" | Out-Null
 Start-Service -Name $serviceName
 Start-Sleep -Seconds 3
