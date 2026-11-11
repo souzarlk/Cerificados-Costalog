@@ -81,4 +81,4 @@ Configure SECURITY_ALERT_WEBHOOK_URL com um endpoint HTTPS de webhook aprovado p
 
 ## Importante
 
-O backend registra e distribui políticas assinadas. Isso, sozinho, ainda não garante controle total de cada forma de uso de um certificado A1. O enforcement de TLS cliente, assinatura documental e upload de PFX tem fluxos distintos e precisa ser homologado nos portais reais. O modo de navegação restrita depende também da extensão de navegador gerenciada pela TI.
+Os agentes consultam heartbeat e política a cada 45 segundos por padrão. O limite geral da API foi dimensionado para uma frota compartilhando o IP de saída; ajuste conforme quantidade real de máquinas e monitoramento.\n\nO backend registra e distribui políticas assinadas. Isso, sozinho, ainda não garante controle total de cada forma de uso de um certificado A1. O enforcement de TLS cliente, assinatura documental e upload de PFX tem fluxos distintos e precisa ser homologado nos portais reais. O modo de navegação restrita depende também da extensão de navegador gerenciada pela TI.
