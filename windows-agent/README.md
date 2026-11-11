@@ -46,10 +46,16 @@ A chave privada nunca deve entrar no pacote Windows ou no Git.
 
 ## Pré-requisitos de Opção B
 
-- Empacotar a extensão browser-extension como CRX com uma chave da TI.
+1. Em uma estação Windows com Google Chrome, execute `Package-Extension.ps1`. O script gera o CRX, o ID da extensão e o updates.xml.
+2. Guarde a chave extension-signing.pem em cofre institucional. Ela não pode ser publicada no servidor web nem commitada no Git.
+3. Empacotar a extensão browser-extension como CRX com uma chave da TI.
 - Hospedar CRX e updates.xml em HTTPS no servidor da empresa.
 - Atualizar o appid e URL no updates.xml.
 - Durante a instalação, informar ID da extensão e URL updates.xml. O script registra o Native Messaging Host e políticas de instalação forçada no Chrome e Edge.
+
+## Remoção
+
+Execute `Uninstall-Agent.ps1` como administrador. O script para e remove o serviço, retira as políticas da extensão gerenciada e pergunta se deve apagar os dados locais. O registro remoto deve ser revogado pela TI no painel.
 
 ## Limites e homologação
 
