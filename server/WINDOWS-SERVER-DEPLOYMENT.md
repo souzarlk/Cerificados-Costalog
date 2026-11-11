@@ -23,7 +23,7 @@ Este guia cobre a implantação da API e do portal no servidor da empresa. O nav
 2. Copie a pasta server/ para C:\Costalog\AGENTE-COSTALOG\server\.
 3. Crie .env a partir de .env.example, fora do Git, com:
    - DB_HOST, DB_PORT, DB_USER, DB_PASSWORD e DB_NAME apontando para o MariaDB privado;
-   - JWT_SECRET aleatório de pelo menos 32 caracteres;
+   - JWT_SECRET aleatório de pelo menos 32 caracteres;\n   - CENTRAL_ADMIN_AUTH_SECRET igual ao ADMIN_AUTH_SECRET privado configurado na Central de Notas Fiscais;
    - POLICY_SIGNING_PRIVATE_KEY_B64 em cofre/arquivo restrito;
    - ALLOWED_ORIGINS com a origem exata do portal;
    - SECURITY_ALERT_WEBHOOK_URL se houver integração de alertas.
@@ -82,4 +82,4 @@ O apiPrefix permanece /api/v1. Se o IIS servir portal e API sob a mesma origem, 
 
 O schema foi preparado para MariaDB 10.6+ e o CI valida MariaDB 11.4. Use InnoDB e utf8mb4. O usuário da aplicação precisa criar/alterar tabelas durante a migração e operar as tabelas do banco; depois da migração, a TI pode reduzir permissões conforme a política interna.
 
-Antes de conectar o portal, execute `npm run db:migrate` e `npm run db:smoke`. Esses comandos validam o schema e operações de transação, bloqueio de linha, JSON, UUID e parâmetros preparados no banco.
+Configure `CENTRAL_ADMIN_AUTH_SECRET` com o mesmo valor privado de `ADMIN_AUTH_SECRET` usado pela Central de Notas Fiscais. O painel não possui uma segunda senha. Antes de conectar o portal, execute `npm run db:migrate` e `npm run db:smoke`. Esses comandos validam o schema e operações de transação, bloqueio de linha, JSON, UUID e parâmetros preparados no banco.
