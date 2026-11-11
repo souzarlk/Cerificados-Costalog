@@ -59,19 +59,21 @@ public sealed class AgentWorker : BackgroundService
 
     private HttpClient Client(AgentConfig config, bool authenticated)
     {
-        var baseUri = new Uri(config.ApiBaseUrl.TrimEnd('/') + "/");
-        var client = new HttpClient { BaseAddress = baseUri, Timeout = TimeSpan.FromSeconds(20) };
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        if (authenticated && !string.IsNullOrWhiteSpace(config.DeviceTokenProtected))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AgentConfigStore.Unprotect(config.DeviceTokenProtected));
-        return client;
+        _http.DefaultRequestHeaders.Clear();
+        _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _http.DefaultRequestHeaders.Authorization = authenticated && !string.IsNullOrWhiteSpace(config.DeviceTokenProtected)
+            ? new AuthenticationHeaderValue("Bearer", AgentConfigStore.Unprotect(config.DeviceTokenProtected))
+            : null;
+        return _http;
     }
+
+    private static Uri Endpoint(AgentConfig config, string route) => new(config.ApiBaseUrl.TrimEnd('/') + "/" + route.TrimStart('/'));
 
     private async Task EnrollAsync(AgentConfig config, CancellationToken token)
     {
         if (string.IsNullOrWhiteSpace(config.EnrollmentTokenProtected))
             throw new InvalidOperationException("O código de instalação não está configurado. Reexecute o assistente do agente.");
-        using var client = Client(config, false);
+        var client = Client(config, false);
         var body = new
         {
             enrollmentToken = AgentConfigStore.Unprotect(config.EnrollmentTokenProtected),
@@ -81,7 +83,7 @@ public sealed class AgentWorker : BackgroundService
             agentVersion = config.AgentVersion,
             installMode = config.InstallMode
         };
-        using var response = await client.PostAsJsonAsync("api/v1/agent/enroll", body, token);
+        using var response = await client.PostAsJsonAsync(Endpoint(config, "api/v1/agent/enroll"), body, token);
         var text = await response.Content.ReadAsStringAsync(token);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException("Enrollment recusado pela API: HTTP " + (int)response.StatusCode + ". " + text);
@@ -100,8 +102,8 @@ public sealed class AgentWorker : BackgroundService
 
     private async Task HeartbeatAsync(AgentConfig config, CancellationToken token)
     {
-        using var client = Client(config, true);
-        using var response = await client.PostAsJsonAsync("api/v1/agent/heartbeat", new { agentVersion = config.AgentVersion }, token);
+        var client = Client(config, true);
+        using var response = await client.PostAsJsonAsync(Endpoint(config, "api/v1/agent/heartbeat"), new { agentVersion = config.AgentVersion }, token);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException("Heartbeat recusado: HTTP " + (int)response.StatusCode + ".");
     }
@@ -109,7 +111,7 @@ public sealed class AgentWorker : BackgroundService
     private async Task SyncPolicyAsync(AgentConfig config, CancellationToken token)
     {
         using var client = Client(config, true);
-        using var response = await client.GetAsync("api/v1/agent/policy", token);
+        using var response = await client.GetAsync(Endpoint(config, "api/v1/agent/policy"), token);
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             await MarkPolicyStateAsync("no-policy", [], 0, DateTimeOffset.UtcNow, token);
@@ -171,7 +173,7 @@ public sealed class AgentWorker : BackgroundService
             var config = AgentConfigStore.Load();
             if (string.IsNullOrWhiteSpace(config.DeviceTokenProtected)) return;
             using var client = Client(config, true);
-            using var response = await client.PostAsJsonAsync("api/v1/agent/events", new
+            using var response = await client.PostAsJsonAsync(Endpoint(config, "api/v1/agent/events"), new
             {
                 eventType = "agent_sync_failed",
                 title = "Falha na sincronização",
