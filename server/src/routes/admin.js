@@ -17,7 +17,7 @@ const siteSchema = z.object({
 async function publishPolicySnapshot(client, admin) {
   // Serializa revisões para evitar números duplicados em publicações concorrentes.
   await client.query("SELECT pg_advisory_xact_lock(7042026)");
-  const enabledSites = await client.query("SELECT hostname FROM agent_sites WHERE enabled=TRUE ORDER BY hostname");
+  const enabledSites = await client.query("SELECT hostname FROM agent_sites WHERE enabled=TRUE ORDER BY hostname");\n  if (enabledSites.rowCount > 4500) { const error = new Error("A lista excede o limite seguro de 4.500 domínios para a extensão do navegador."); error.status = 400; throw error; }
   const revisionResult = await client.query("SELECT COALESCE(MAX(revision),0)::int AS revision FROM agent_policies");
   const revision = revisionResult.rows[0].revision + 1;
   const publishedAt = new Date().toISOString();
