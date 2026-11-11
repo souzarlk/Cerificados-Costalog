@@ -6,7 +6,31 @@
 <link rel="stylesheet" href="agente-costalog.css?v=5">
 </head>
 <body>
-<div id="authGate" class="auth-gate" hidden><form id="agentLoginForm" class="auth-card"><span class="eyebrow">ACESSO ADMINISTRATIVO</span><h2>Entrar no AGENTE COSTALOG</h2><p>Autentique-se no servidor corporativo para gerenciar sites, dispositivos e políticas.</p><label for="agentEmail">E-mail corporativo</label><input id="agentEmail" type="email" autocomplete="username" required maxlength="254"><label for="agentPassword">Senha</label><input id="agentPassword" type="password" autocomplete="current-password" required maxlength="256"><button class="primary" type="submit">Entrar no painel</button><p id="agentLoginFeedback" class="feedback" aria-live="polite"></p></form></div>
+<div id="authGate" class="auth-screen" hidden>
+  <section class="auth-brand-panel">
+    <div class="auth-brand"><img src="./assets/logo-costalog-white.svg" alt="Costalog"></div>
+    <div class="auth-pitch">
+      <div class="eyebrow">PLATAFORMA DE SEGURANÇA COSTALOG</div>
+      <h1>Certificados protegidos. Operação em movimento.</h1>
+      <p>Um ambiente centralizado para controlar os domínios autorizados, acompanhar os computadores e reforçar a segurança dos certificados A1 da Costalog.</p>
+      <div class="auth-feature-row"><span class="auth-feature">Sites autorizados</span><span class="auth-feature">Dispositivos Windows</span><span class="auth-feature">Auditoria de segurança</span></div>
+    </div>
+    <div class="auth-brand-foot">Conectamos destinos. Movimentamos resultados.</div>
+  </section>
+  <section class="auth-form-wrap">
+    <form id="agentLoginForm" class="auth-card">
+      <img class="auth-logo" src="./assets/logo-costalog.svg" alt="Costalog">
+      <div class="eyebrow">ACESSO ADMINISTRATIVO</div>
+      <h2>Bem-vindo à Central.</h2>
+      <p class="sub">Entre com o mesmo usuário e senha da Central de Notas Fiscais Costalog.</p>
+      <div class="auth-field"><label for="agentUsername">Usuário</label><input id="agentUsername" name="username" type="text" autocomplete="username" placeholder="Digite seu usuário" required maxlength="80"></div>
+      <div class="auth-field"><label for="agentPassword">Senha</label><input id="agentPassword" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required maxlength="200"></div>
+      <button class="auth-submit" id="agentLoginSubmit" type="submit">Acessar plataforma <span aria-hidden="true">→</span></button>
+      <p id="agentLoginFeedback" class="auth-error" role="alert" aria-live="polite"></p>
+      <p class="auth-hint">Sessão protegida · Costalog Transportes</p>
+    </form>
+  </section>
+</div>
 <header class="top"><a class="back" href="index.html">← Voltar à central</a><div class="brand"><span class="mark">C</span><div><b>AGENTE COSTALOG</b><small>SEGURANÇA DE CERTIFICADOS</small></div></div><div class="top-tools"><span class="local-tag" id="connectionLabel">INICIALIZANDO CONEXÃO</span><button id="agentLogout" class="logout-mini" type="button" hidden>Sair</button></div></header>
 <main class="wrap">
 <section class="intro"><div><span class="eyebrow">GESTÃO CENTRAL DE POLÍTICAS</span><h1>Agente <em>Costalog</em></h1><p>Gerencie os domínios autorizados, acompanhe os dispositivos e defina o modo de proteção usado na instalação do agente Windows.</p></div><div class="shield">◈</div></section>
