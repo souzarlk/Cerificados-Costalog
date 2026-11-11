@@ -56,6 +56,10 @@ Veja `../api-contract/openapi.yaml` para o contrato completo.
 - `POST /api/v1/agent/enroll`, `POST /api/v1/agent/heartbeat`
 - `GET /api/v1/agent/policy`, `POST /api/v1/agent/events`
 
+## Alertas imediatos à TI
+
+Configure SECURITY_ALERT_WEBHOOK_URL com um endpoint HTTPS de webhook aprovado pela empresa. Quando um agente reportar browser_navigation_blocked, o backend grava o evento e envia um POST JSON ao webhook. Se não estiver configurado, o registro permanece no banco, mas não há notificação externa imediata. Mantenha essa URL somente no ambiente do servidor.
+
 ## Importante
 
 O backend registra e distribui políticas assinadas. Isso, sozinho, ainda não garante controle total de cada forma de uso de um certificado A1. O enforcement de TLS cliente, assinatura documental e upload de PFX tem fluxos distintos e precisa ser homologado nos portais reais. O modo de navegação restrita depende também da extensão de navegador gerenciada pela TI.
