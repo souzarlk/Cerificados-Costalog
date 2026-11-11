@@ -24,13 +24,13 @@ Este guia cobre a implantação da API e do portal no servidor da empresa. O nav
 3. Crie .env a partir de .env.example, fora do Git, com:
    - DB_HOST, DB_PORT, DB_USER, DB_PASSWORD e DB_NAME apontando para o MariaDB privado;
    - JWT_SECRET aleatório de pelo menos 32 caracteres;
+   - CENTRAL_ADMIN_AUTH_SECRET igual ao ADMIN_AUTH_SECRET privado configurado na Central de Notas Fiscais;
    - POLICY_SIGNING_PRIVATE_KEY_B64 em cofre/arquivo restrito;
    - ALLOWED_ORIGINS com a origem exata do portal;
    - SECURITY_ALERT_WEBHOOK_URL se houver integração de alertas.
 4. No PowerShell, a partir da pasta server/, execute:
    - npm install
    - npm run db:migrate
-   - npm run admin:create
 5. Gere a chave de assinatura em estação segura com npm run keys:generate. Coloque a chave privada somente no ambiente protegido do servidor e a chave pública no pacote Windows.
 6. Configure o serviço Windows da API com diretório de trabalho C:\Costalog\AGENTE-COSTALOG\server e comando node src/server.js. Defina NODE_ENV=production, HOST=127.0.0.1 e PORT=8080.
 7. Configure o serviço para reiniciar automaticamente e registrar saída/erros em local com ACL restrita.
@@ -71,7 +71,7 @@ O apiPrefix permanece /api/v1. Se o IIS servir portal e API sob a mesma origem, 
 ## Validação antes do piloto
 
 1. GET /api/v1/health deve retornar status: ok.
-2. Entre no painel com o administrador criado.
+2. Entre no painel usando o mesmo usuário e senha da Central de Notas Fiscais Costalog.
 3. Gere um token de instalação de uso único.
 4. Publique a primeira política (o cadastro/remoção de site já publica automaticamente a revisão).
 5. Instale em um PC piloto e confirme heartbeat, revisão e eventos.
@@ -82,4 +82,4 @@ O apiPrefix permanece /api/v1. Se o IIS servir portal e API sob a mesma origem, 
 
 O schema foi preparado para MariaDB 10.6+ e o CI valida MariaDB 11.4. Use InnoDB e utf8mb4. O usuário da aplicação precisa criar/alterar tabelas durante a migração e operar as tabelas do banco; depois da migração, a TI pode reduzir permissões conforme a política interna.
 
-Antes de conectar o portal, execute `npm run db:migrate` e `npm run db:smoke`. Esses comandos validam o schema e operações de transação, bloqueio de linha, JSON, UUID e parâmetros preparados no banco.
+Configure `CENTRAL_ADMIN_AUTH_SECRET` com o mesmo valor privado de `ADMIN_AUTH_SECRET` usado pela Central de Notas Fiscais. O painel não possui uma segunda senha. Antes de conectar o portal, execute `npm run db:migrate` e `npm run db:smoke`. Esses comandos validam o schema e operações de transação, bloqueio de linha, JSON, UUID e parâmetros preparados no banco.

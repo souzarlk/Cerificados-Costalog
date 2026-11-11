@@ -47,3 +47,62 @@ body.auth-required>.top,body.auth-required>.wrap{visibility:hidden;pointer-event
 .policy-status.synced{color:#16834b;background:#eaf8f0}
 .policy-status.pending{color:#986400;background:#fff4df}
 .policy-status.no-policy{color:#777;background:#f0f0f2}
+
+
+/* Login unificado: mesma composição visual da Central de Notas Fiscais. */
+#authGate{
+  --surface:#fff;--surface-2:#f8fafb;--ink:#15202b;--muted:#75818b;--muted-2:#9aa4ad;
+  --line:#e3e8eb;--red:#e30613;--red-2:#b90814;
+  position:fixed;inset:0;z-index:1000;display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(400px,510px);background:var(--surface);
+  padding:0;border:0;border-radius:0;backdrop-filter:none;
+}
+#authGate[hidden]{display:none!important}
+#authGate .auth-brand-panel{
+  position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:100vh;
+  padding:38px clamp(28px,5vw,74px);overflow:hidden;
+  background:radial-gradient(ellipse at 80% 18%,rgba(227,6,19,.3),transparent 40%),linear-gradient(145deg,#101820,#171f28 64%,#281b22);
+  color:#fff;isolation:isolate;
+}
+#authGate .auth-brand-panel:before{
+  content:"";position:absolute;inset:0;z-index:-1;opacity:.2;
+  background-image:linear-gradient(rgba(255,255,255,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.09) 1px,transparent 1px);
+  background-size:48px 48px;mask-image:linear-gradient(120deg,transparent,black);
+}
+#authGate .auth-brand-panel:after{
+  content:"";position:absolute;z-index:-1;right:-160px;bottom:-250px;width:680px;height:680px;
+  border:1px solid rgba(255,255,255,.13);border-radius:50%;
+  box-shadow:0 0 0 45px rgba(255,255,255,.025),0 0 0 105px rgba(255,255,255,.02);
+}
+#authGate .auth-brand{display:flex;align-items:center;min-height:105px}
+#authGate .auth-brand img{width:165px;height:105px;object-fit:contain;object-position:left center}
+#authGate .auth-pitch{max-width:660px;margin:auto 0;padding:50px 0}
+#authGate .auth-pitch .eyebrow{color:#ff8790}
+#authGate .auth-pitch h1{max-width:650px;margin:14px 0 18px;font-size:clamp(38px,5vw,70px);line-height:.98;letter-spacing:-.07em;font-weight:850}
+#authGate .auth-pitch p{max-width:470px;color:rgba(237,243,246,.66);font-size:13px;line-height:1.9}
+#authGate .auth-feature-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px}
+#authGate .auth-feature{padding:8px 11px;border:1px solid rgba(255,255,255,.13);border-radius:99px;background:rgba(255,255,255,.05);color:#c6d0d6;font-size:9px;font-weight:700}
+#authGate .auth-brand-foot{display:flex;align-items:center;gap:9px;color:#72828e;font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+#authGate .auth-brand-foot:before{content:"";width:22px;height:1px;background:var(--red)}
+#authGate .auth-form-wrap{display:grid;place-items:center;padding:clamp(24px,5vw,58px);background:var(--surface)}
+#authGate .auth-card{width:100%;max-width:360px;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);box-shadow:none;display:block;gap:0}
+#authGate .auth-logo{width:120px;height:98px;object-fit:contain;margin-bottom:20px}
+#authGate .auth-card .eyebrow{margin-bottom:10px}
+#authGate .auth-card h2{margin:0 0 8px;color:var(--ink);font-size:30px;line-height:1.08;letter-spacing:-.06em;font-weight:850}
+#authGate .auth-card .sub{margin:0 0 26px;color:var(--muted);font-size:11px;line-height:1.7}
+#authGate .auth-field{display:grid;gap:7px;margin-bottom:15px}
+#authGate .auth-field label{color:var(--muted);font-size:9px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+#authGate .auth-field input{width:100%;height:46px;min-width:0;padding:0 14px;border:1px solid var(--line);border-radius:11px;outline:0;background:var(--surface-2);color:var(--ink);font:inherit;font-size:11px}
+#authGate .auth-field input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(227,6,19,.1)}
+#authGate .auth-submit{width:100%;min-height:46px;margin-top:8px;border:0;border-radius:11px;background:linear-gradient(120deg,var(--red-2),var(--red));color:#fff;font-size:10px;font-weight:850;box-shadow:0 10px 22px rgba(227,6,19,.18);transition:transform .2s,box-shadow .2s}
+#authGate .auth-submit:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(227,6,19,.22)}
+#authGate .auth-submit:disabled{opacity:.6;cursor:wait;transform:none}
+#authGate .auth-error{min-height:20px;margin:10px 0 0;color:var(--red);font-size:10px;font-weight:500}
+#authGate .auth-hint{margin-top:24px;color:var(--muted-2);font-size:9px;text-align:center}
+@media(max-width:1150px){#authGate{grid-template-columns:minmax(0,1fr) minmax(360px,470px)}}
+@media(max-width:720px){
+  #authGate{grid-template-columns:1fr}
+  #authGate .auth-brand-panel{display:none}
+  #authGate .auth-form-wrap{padding:26px}
+  #authGate .auth-card{max-width:380px}
+}
