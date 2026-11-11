@@ -105,7 +105,7 @@ public sealed class AgentWorker : BackgroundService
     private async Task HeartbeatAsync(AgentConfig config, CancellationToken token)
     {
         var client = Client(config, true);
-        using var response = await client.PostAsJsonAsync(Endpoint(config, "api/v1/agent/heartbeat"), new { agentVersion = config.AgentVersion }, token);
+        using var response = await client.PostAsJsonAsync(Endpoint(config, "api/v1/agent/heartbeat"), new { agentVersion = config.AgentVersion, policyRevision = config.LastPolicyRevision }, token);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException("Heartbeat recusado: HTTP " + (int)response.StatusCode + ".");
     }
