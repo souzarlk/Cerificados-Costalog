@@ -58,9 +58,15 @@ router.use(requireAgent);
 
 router.post("/heartbeat", async (req,res,next) => {
   try {
-    await query("UPDATE agent_devices SET last_seen_at=NOW(),agent_version=COALESCE(NULLIF($2,''),agent_version) WHERE id=$1",
-      [req.device.id,String(req.body?.agentVersion||"").slice(0,40)]);
-    res.json({ok:true,serverTime:new Date().toISOString()});
+    const input=z.object({
+      agentVersion:z.string().max(40).optional().default(""),
+      policyRevision:z.number().int().min(0).optional().default(0)
+    }).strict().parse(req.body || {});
+    await query(
+      "UPDATE agent_devices SET last_seen_at=NOW(),agent_version=COALESCE(NULLIF($2,''),agent_version),policy_revision=GREATEST(policy_revision,$3) WHERE id=$1",
+      [req.device.id,input.agentVersion,input.policyRevision]
+    );
+    res.json({ok:true,serverTime:new Date().toISOString(),policyRevisionAccepted:input.policyRevision});
   } catch(e) { next(e); }
 });
 
@@ -77,7 +83,7 @@ router.get("/policy", async (req,res,next) => {
       expiresAt:new Date(now+Math.max(1,Number(process.env.POLICY_VALIDITY_HOURS||24))*60*60*1000).toISOString()
     };
     const signed=signPolicy(payload);
-    await query("UPDATE agent_devices SET last_seen_at=NOW(),policy_revision=$2 WHERE id=$1",[req.device.id,row.revision]);
+    await query("UPDATE agent_devices SET last_seen_at=NOW() WHERE id=$1",[req.device.id]);
     res.set("Cache-Control","no-store");
     res.json({revision:row.revision,status:"published",...signed});
   } catch(e) { next(e); }
