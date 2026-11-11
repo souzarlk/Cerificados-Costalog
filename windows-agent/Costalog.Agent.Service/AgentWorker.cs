@@ -161,7 +161,7 @@ public sealed class AgentWorker : BackgroundService
         static string SafeMode()
         {
             try { return AgentConfigStore.Load().InstallMode; }
-            catch { return "certificate"; }
+            catch { return "certificate-and-web"; }
         }
     }
 
