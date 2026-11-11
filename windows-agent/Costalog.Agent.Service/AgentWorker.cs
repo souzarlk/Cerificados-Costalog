@@ -201,6 +201,8 @@ public sealed class AgentWorker : BackgroundService
                 else return;
             }
             catch (JsonException) { File.Delete(file); }
+            catch (InvalidOperationException) { File.Delete(file); }
+            catch (KeyNotFoundException) { File.Delete(file); }
             catch (IOException) { /* arquivo ainda pode estar sendo gravado pelo Native Host; tenta novamente no próximo ciclo */ }
             catch (HttpRequestException) { return; }
         }
