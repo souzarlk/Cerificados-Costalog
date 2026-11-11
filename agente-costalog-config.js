@@ -7,6 +7,6 @@ window.COSTALOG_AGENT_CONFIG = Object.freeze({
   apiBaseUrl: "",
   apiPrefix: "/api/v1",
   requestTimeoutMs: 12000,
-  authMode: "oidc-pkce",
+  authMode: "password-jwt",
   localDraftWhenApiIsEmpty: true
 });
