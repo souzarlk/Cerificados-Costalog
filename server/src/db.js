@@ -7,9 +7,7 @@ if (missing.length) {
 }
 
 const port = Number(process.env.DB_PORT || 3306);
-if (!Number.isInteger(port) || port < 1 || port > 65535) {
-  throw new Error("DB_PORT inválida.");
-}
+if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("DB_PORT inválida.");
 
 const rawPool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -45,6 +43,9 @@ function normalizeRows(rows) {
         try { normalized[key] = JSON.parse(normalized[key]); } catch {}
       }
     }
+    for (const key of ["enabled", "active"]) {
+      if (Object.prototype.hasOwnProperty.call(normalized, key)) normalized[key] = Boolean(normalized[key]);
+    }
     return normalized;
   });
 }
@@ -54,11 +55,7 @@ function wrapResult(result) {
     const rows = normalizeRows(result);
     return { rows, rowCount: rows.length };
   }
-  return {
-    rows: [],
-    rowCount: Number(result.affectedRows || 0),
-    insertId: result.insertId
-  };
+  return { rows: [], rowCount: Number(result.affectedRows || 0), insertId: result.insertId };
 }
 
 class MariaConnection {
@@ -92,7 +89,6 @@ export const pool = {
   },
   async end() { await rawPool.end(); }
 };
-
 
 export async function query(sql, params = []) {
   const [result] = await rawPool.execute(normalizeSql(sql), params);
