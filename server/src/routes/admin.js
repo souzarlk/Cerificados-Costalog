@@ -73,6 +73,33 @@ router.post("/sites", requireAdminWrite, async (req, res, next) => {
   } finally { client.release(); }
 });
 
+
+router.patch("/sites/:siteId", requireAdminWrite, async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    const input = z.object({ enabled: z.boolean() }).strict().parse(req.body);
+    await client.query("BEGIN");
+    const result = await client.query(
+      "UPDATE agent_sites SET enabled=$2,updated_by=$3,updated_at=NOW() WHERE id=$1 RETURNING id,name,hostname,enabled,created_at AS \"createdAt\",updated_at AS \"updatedAt\"",
+      [req.params.siteId,input.enabled,req.admin.id]
+    );
+    if (!result.rowCount) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error:"not_found",message:"Domínio não encontrado." });
+    }
+    await client.query(
+      "INSERT INTO agent_events(event_type,title,message,domain,metadata) VALUES($1,$2,$3,$4,$5::jsonb)",
+      [input.enabled ? "admin_site_enabled" : "admin_site_disabled",input.enabled ? "Domínio ativado" : "Domínio desativado",req.admin.email,result.rows[0].hostname,JSON.stringify({adminId:req.admin.id,siteId:result.rows[0].id})]
+    );
+    const publication = await publishPolicySnapshot(client,req.admin);
+    await client.query("COMMIT");
+    res.json({...result.rows[0],policyRevision:publication.revision,publishedAt:publication.publishedAt});
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    next(e);
+  } finally { client.release(); }
+});
+
 router.delete("/sites/:siteId", requireAdminWrite, async (req, res, next) => {
   const client = await pool.connect();
   try {
