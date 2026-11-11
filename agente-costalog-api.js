@@ -55,7 +55,7 @@
     }
     if (!response.ok) {
       const message = data && (data.message || data.error);
-      if (response.status === 401) throw new Error("Sessão da API não autenticada. Entre pelo provedor corporativo.");
+      if (response.status === 401) throw new Error("Sessão administrativa inválida ou expirada. Entre novamente no AGENTE COSTALOG.");
       if (response.status === 403) throw new Error("A API recusou a operação: perfil administrativo necessário.");
       throw new Error(message || ("Falha na API (HTTP " + response.status + ")."));
     }
