@@ -42,6 +42,7 @@ function renderDevices(){
   const next=d.status==="active"?"revoked":"active";
   const label=next==="revoked"?"Revogar":"Reativar";
   const policyLabel=currentPolicyRevision===0?"SEM POLÍTICA PUBLICADA":(synced?"POLÍTICA ATUALIZADA":"AGUARDANDO SINCRONIZAÇÃO");
+  const policyClass=currentPolicyRevision===0?"no-policy":(synced?"synced":"pending");
   return '<article class="data-row"><div><b>'+esc(d.deviceName||d.hostname||d.name||"Computador")+'</b><small>'+esc(d.username||"Usuário não informado")+' · '+esc(d.lastSeenAt?new Date(d.lastSeenAt).toLocaleString("pt-BR"):"Sem sincronização")+' · Política v'+applied+'</small></div><div class="device-row-actions"><span class="site-status">'+esc(d.status||"REGISTRADO")+'</span><span class="policy-status '+(synced?"synced":"pending")+'">'+policyLabel+'</span><button class="remove" data-device-id="'+esc(d.id)+'" data-next-status="'+next+'" type="button">'+label+'</button></div></article>';
  }).join("");
 }
