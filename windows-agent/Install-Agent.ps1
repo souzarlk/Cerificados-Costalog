@@ -4,6 +4,7 @@ $serviceName = "CostalogAgent"
 $displayName = "AGENTE COSTALOG"
 $programRoot = Join-Path $env:ProgramFiles "Costalog/Agent"
 $dataRoot = Join-Path $env:ProgramData "Costalog/Agent"
+$pendingRoot = Join-Path $dataRoot "pending-events"
 $dist = Join-Path $PSScriptRoot "dist"
 
 function Add-ForcedExtension([string]$BrowserName, [string]$PolicyPath, [string]$ExtensionId, [string]$UpdateUrl) {
@@ -29,7 +30,7 @@ function Add-ForcedExtension([string]$BrowserName, [string]$PolicyPath, [string]
 if (-not (Test-Path (Join-Path $dist "Service/Costalog.Agent.Service.exe"))) {
   throw "Arquivos compilados não encontrados. Execute Publish-Agent.ps1 primeiro."
 }
-New-Item -ItemType Directory -Force -Path $programRoot,$dataRoot | Out-Null
+New-Item -ItemType Directory -Force -Path $programRoot,$dataRoot,$pendingRoot | Out-Null
 Copy-Item (Join-Path $dist "Service/*") $programRoot -Recurse -Force
 Copy-Item (Join-Path $dist "Setup/*") $programRoot -Recurse -Force
 Copy-Item (Join-Path $dist "NativeHost/*") $programRoot -Recurse -Force
@@ -63,6 +64,7 @@ $config = Get-Content $configPath -Raw | ConvertFrom-Json
 
 & icacls $dataRoot /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "BUILTIN\Administrators:(OI)(CI)F" "NT SERVICE\CostalogAgent:(OI)(CI)M" "BUILTIN\Users:(OI)(CI)RX" | Out-Null
 & icacls $configPath /inheritance:r /grant:r "SYSTEM:F" "BUILTIN\Administrators:F" "NT SERVICE\CostalogAgent:F" | Out-Null
+& icacls $pendingRoot /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "BUILTIN\Administrators:(OI)(CI)F" "NT SERVICE\CostalogAgent:(OI)(CI)M" "BUILTIN\Users:(OI)(CI)M" | Out-Null
 
 if ($config.installMode -eq "certificate-and-web") {
   Write-Host ""
