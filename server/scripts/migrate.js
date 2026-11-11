@@ -9,6 +9,7 @@ const sql = await fs.readFile(path.join(dir, "../migrations/001_initial.sql"), "
 // The migration contains only ordinary CREATE TABLE / INSERT statements.
 // MariaDB commits DDL implicitly, so apply idempotent statements individually.
 const statements = sql
+  .replace(/^\s*--.*$/gm, "")
   .split(";")
   .map(statement => statement.trim())
   .filter(statement => statement && !statement.startsWith("--"));
