@@ -211,7 +211,7 @@ router.post("/enrollment-tokens", requireAdminWrite, async (req, res, next) => {
     const token = newOpaqueToken(32);
     const expiresMinutes = Math.min(1440, Math.max(5, Number(req.body?.expiresMinutes) || 60));
     await client.query(
-      "INSERT INTO enrollment_tokens(token_hash,created_by,expires_at) VALUES(?,?,DATE_ADD(NOW(3), INTERVAL ? MINUTE))",
+      "INSERT INTO enrollment_tokens(token_hash,created_by,expires_at) VALUES(?,?,TIMESTAMPADD(MINUTE, ?, NOW(3)))",
       [hashToken(token), req.admin.id, expiresMinutes]
     );
     await client.query(
