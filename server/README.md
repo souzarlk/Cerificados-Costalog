@@ -17,8 +17,8 @@ A camada HTTP não depende do banco diretamente. Nesta primeira versão foi impl
 2. Crie um banco e usuário exclusivos para o AGENTE COSTALOG, com permissões mínimas.
 3. Copie `.env.example` para `.env` e preencha os valores reais fora do Git.
 4. Configure `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS` e as chaves de assinatura.
-5. Instale dependências com `npm ci` (ou `npm install` na primeira instalação).
-6. Execute `npm run db:migrate`.
+5. Instale dependências com `npm install` (o arquivo de lock será gerado no servidor).
+6. Execute `npm run db:migrate`. Em Docker Compose, a API usa o hostname `db` na rede interna do Compose; fora do Docker, ajuste `DATABASE_URL` para o endereço privado do PostgreSQL da empresa.
 7. Execute `npm run admin:create` para criar o primeiro administrador. Use senha forte e não a reutilize.
 8. Inicie com `npm start` e coloque um proxy HTTPS corporativo na frente.
 9. Restrinja a porta do banco à rede/host da API. O banco não deve ser publicado.
