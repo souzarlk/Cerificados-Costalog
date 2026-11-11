@@ -50,7 +50,11 @@ A API deve escutar em loopback quando estiver atrás do IIS, não em uma interfa
 
 ## Portal no servidor
 
-Copie os arquivos estáticos do portal e assets para o diretório configurado no IIS. Em agente-costalog-config.js, aponte apiBaseUrl para a origem HTTPS da API, por exemplo:
+No repositório, execute o empacotador PowerShell a partir de uma estação Windows com `-Destination` apontando para a pasta que o IIS publicará. Quando o endereço HTTPS estiver definido, informe-o em `-ApiBaseUrl`:
+
+`./Package-Portal.ps1 -Destination C:\\Costalog\\AGENTE-COSTALOG\\portal -ApiBaseUrl https://portal-interno.costalog`
+
+O script copia apenas os arquivos estáticos, exclui backend, agente, chaves e arquivos de desenvolvimento, e configura `agente-costalog-config.js` dentro do pacote exportado. Se o endereço ainda não estiver definido, omita `-ApiBaseUrl` e configure-o antes de publicar. Em agente-costalog-config.js, aponte apiBaseUrl para a origem HTTPS da API, por exemplo:
 
 apiBaseUrl: "https://portal-interno.costalog"
 
