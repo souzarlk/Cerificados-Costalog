@@ -1,26 +1,56 @@
-# Windows Agent — requisitos de implementação
+# AGENTE COSTALOG — componente Windows
 
-Este diretório documenta o componente Windows planejado. Ainda não existe aqui um executável nem um mecanismo de bloqueio funcional.\n\nO agente deverá se comunicar exclusivamente com a API HTTPS hospedada no servidor da Costalog. Ele não terá acesso direto ao banco de dados. A tecnologia do banco será transparente para o agente e poderá ser alterada pela infraestrutura sem exigir mudanças no protocolo do agente, desde que o contrato REST permaneça compatível.
+Este diretório contém a primeira implementação do agente Windows: serviço de sincronização, assistente de instalação e Native Messaging Host para Chrome/Edge. O serviço faz enrollment de uso único, protege o token do dispositivo com DPAPI, consulta a API, verifica assinatura RSA da política e publica um estado local somente após validação.
 
-## Responsabilidades
-- Executar como serviço Windows com identidade de serviço dedicada.
-- Registrar o dispositivo por processo de enrollment autenticado.
-- Receber políticas assinadas pela API central e validar assinatura, versão, expiração e integridade.\n- Consultar a API configurada pela infraestrutura, sem embutir endereço fixo nem credenciais no executável.
-- Aplicar a política deny-by-default antes de qualquer operação de chave privada.
-- Registrar tentativas negadas e autorizadas com dados mínimos necessários.
-- Enviar eventos à API e manter fila local protegida quando estiver offline.
-- Não expor PFX, senha ou chave privada ao painel web ou ao usuário comum.
+## Compilar
 
-## Requisito criptográfico
-Apenas instalar um PFX no repositório de certificados do Windows ou configurar políticas do Chrome/Edge não garante que o certificado só seja usado em domínios permitidos. A implementação precisa de um provedor criptográfico/serviço de assinatura controlado (por exemplo, integração CNG/KSP adequada) que imponha autorização no caminho de uso da chave.
+Em uma estação administrativa com .NET 8 SDK e Windows PowerShell:
 
-## Segurança operacional
-- Chaves privadas devem ser não exportáveis quando tecnicamente possível.
-- ACLs devem permitir acesso somente ao serviço/provedor autorizado.
-- O serviço deve validar a política localmente e falhar fechado quando não conseguir provar que a autorização está válida.
-- Atualizações do agente devem ser assinadas.
-- Não registrar senha, conteúdo PFX ou material de chave nos logs.
-- Testar autenticação TLS, assinatura e aplicações nativas separadamente.
+~~~powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\Publish-Agent.ps1
+~~~
 
-## Estado
-Especificação inicial apenas. Não distribuir nem considerar este componente operacional até existir implementação, assinatura, testes de bypass e homologação.
+Os binários ficam em dist/. A publicação é self-contained para Windows x64.
+
+## Preparar a chave pública
+
+1. No servidor seguro, execute npm run keys:generate dentro da pasta server.
+2. Guarde POLICY_SIGNING_PRIVATE_KEY_B64 em cofre de segredos do servidor.
+3. Copie apenas a chave pública PEM para policy-public.pem neste diretório.
+4. Execute Publish-Agent.ps1 novamente para incluir a chave pública no pacote de instalação.
+
+A chave privada nunca deve entrar no pacote Windows ou no Git.
+
+## Instalação em cada computador
+
+1. No painel AGENTE COSTALOG, gere um código de instalação de uso único.
+2. Execute Install-Agent.ps1 como administrador no computador Windows.
+3. Informe o endereço HTTPS da API, selecione Opção A ou B, cole o código e confirme a chave pública.
+4. O serviço será cadastrado automaticamente na API e passará a enviar heartbeat e buscar políticas a cada 45 segundos.
+
+## O que já faz
+
+- Serviço Windows com inicialização automática.
+- Cadastro do computador mediante token de uso único.
+- Token exclusivo por dispositivo, armazenado localmente com DPAPI LocalMachine.
+- ACL no arquivo de configuração e na pasta do agente.
+- Heartbeat, sincronização e verificação de assinatura RSA.
+- Expiração da política e bloqueio preventivo de navegação na Opção B quando o estado local estiver ausente, inválido ou expirado.
+- Eventos de falha de sincronização enviados à API, com limitação de repetição.
+
+## Diferença entre os modos
+
+- Opção A mantém a navegação normal sem restrição. O serviço sincroniza política e mantém a identidade do dispositivo, mas isso ainda não impede de forma universal que um programa use uma chave A1 fora dos destinos permitidos. Para esse bloqueio é necessário um provedor criptográfico gerenciado e homologação dos fluxos reais dos portais (mTLS, assinatura documental, aplicações nativas e upload de PFX). Não distribuir como bloqueio efetivo da chave até concluir essa camada.
+- Opção B força a extensão corporativa de navegação no Chrome e Edge. A extensão bloqueia navegação principal para domínios fora da allowlist, por padrão. Sub-recursos e outros aplicativos não são bloqueados por esta primeira versão.
+
+## Pré-requisitos de Opção B
+
+- Empacotar a extensão browser-extension como CRX com uma chave da TI.
+- Hospedar CRX e updates.xml em HTTPS no servidor da empresa.
+- Atualizar o appid e URL no updates.xml.
+- Durante a instalação, informar ID da extensão e URL updates.xml. O script registra o Native Messaging Host e políticas de instalação forçada no Chrome e Edge.
+
+## Limites e homologação
+
+Esta primeira versão do agente é um componente real de cadastro/sincronização/verificação de política; ainda não representa uma solução completa de proteção criptográfica de A1. A extensão protege somente navegação principal nos navegadores gerenciados. Não impede upload do mesmo PFX para outro programa, uso em outro computador ou cópia que já tenha sido exportada. Testar primeiro em um PC piloto e com portais reais da Costalog.
