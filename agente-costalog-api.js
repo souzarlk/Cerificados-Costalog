@@ -8,11 +8,14 @@
   let accessToken = null;
 
   function baseUrl() {
-    return String(config.apiBaseUrl || "").trim().replace(/\/+$/, "");
+    return String(config.apiBaseUrl || "").trim().replace(/\\/+$/, "");
+  }
+  function identityBaseUrl() {
+    return String(config.identityBaseUrl || "").trim().replace(/\\/+$/, "");
   }
   function prefix() {
     const value = String(config.apiPrefix || "/api/v1").trim();
-    return "/" + value.replace(/^\/+|\/+$/g, "");
+    return "/" + value.replace(/^\\/+|\\/+$/g, "");
   }
   function isConfigured() { return Boolean(baseUrl()); }
   function hasAccessToken() { return Boolean(accessToken); }
@@ -21,6 +24,50 @@
   }
   function clearAccessToken() { accessToken = null; }
 
+  async function identityLogin(username, password) {
+    const base = identityBaseUrl();
+    if (!base) throw new Error("O serviço de autenticação da Central de Notas Fiscais não está configurado.");
+    const timeout = Math.max(1000, Number(config.requestTimeoutMs) || 12000);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    let response;
+    try {
+      response = await fetch(base + String(config.identityLoginPath || "/api/auth/login"), {
+        method: "POST",
+        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+        credentials: "omit",
+        cache: "no-store",
+        signal: controller.signal
+      });
+    } catch (error) {
+      if (error && error.name === "AbortError") throw new Error("Tempo limite ao validar o acesso na Central de Notas Fiscais.");
+      throw new Error("Não foi possível conectar ao serviço de login da Central de Notas Fiscais.");
+    } finally {
+      clearTimeout(timer);
+    }
+    const raw = await response.text();
+    let data = null;
+    if (raw) {
+      try { data = JSON.parse(raw); }
+      catch { throw new Error("A Central de Notas Fiscais retornou uma resposta inválida."); }
+    }
+    if (!response.ok) {
+      if (response.status === 401) throw new Error("Usuário ou senha incorretos. Utilize o mesmo acesso da Central de Notas Fiscais.");
+      if (response.status === 429) throw new Error("Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.");
+      throw new Error((data && data.error) || "Não foi possível validar o acesso na Central de Notas Fiscais.");
+    }
+    if (!data || typeof data.token !== "string" || !data.token) throw new Error("A Central de Notas Fiscais não retornou uma sessão válida.");
+    const meResponse = await fetch(base + String(config.identityMePath || "/api/auth/me"), {
+      method: "GET",
+      headers: { "Accept": "application/json", "Authorization": "Bearer " + data.token },
+      credentials: "omit",
+      cache: "no-store"
+    });
+    if (!meResponse.ok) throw new Error("A sessão da Central de Notas Fiscais não pôde ser confirmada.");
+    setAccessToken(data.token);
+    return data;
+  }
   async function request(path, options) {
     if (!isConfigured()) throw new Error("Endereço da API não configurado.");
     const opts = options || {};
