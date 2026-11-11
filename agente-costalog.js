@@ -124,7 +124,7 @@ $("#publishPolicy").addEventListener("click",async()=>{
  catch(error){setFeedback(error.message,true)}
  finally{button.disabled=!serverReady}
 });
-document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id==="panel-"+b.dataset.tab))}));
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id==="panel-"+b.dataset.tab))}));\nwindow.addEventListener("costalog:auth-changed",refresh);
 if(!isAdmin()){document.body.innerHTML='<main style="font:16px Arial;padding:50px;text-align:center"><h2>Acesso administrativo necessário</h2><p>Entre como administrador na Central de Certificados para abrir o AGENTE COSTALOG.</p><a href="index.html">Voltar ao portal</a></main>';return}
 refresh();
 })();
