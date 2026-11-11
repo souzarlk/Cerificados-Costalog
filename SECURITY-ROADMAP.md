@@ -2,7 +2,7 @@
 
 ## Decisões aprovadas
 - Política de domínio: negar por padrão; permitir somente destinos cadastrados explicitamente.
-- Tentativas negadas: bloquear, registrar evento e gerar alerta imediato para o TI.
+- Tentativas negadas: bloquear, enfileirar o evento no computador e encaminhar alerta à TI após a sincronização com o servidor.
 - Certificados A1: instalados nos computadores Windows.
 - Navegadores contemplados: Google Chrome e Microsoft Edge.
 
