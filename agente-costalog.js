@@ -2,7 +2,7 @@
 const DRAFT_KEY="costalog_agent_sites_draft_v1",DRAFT_VERSION="costalog_agent_policy_version_v1";
 const $=s=>document.querySelector(s),API=window.CostalogAgentAPI;
 const serverMode=Boolean(API&&API.isConfigured());
-let sites=[],devices=[],events=[],serverReady=false,localMode=!serverMode;
+let sites=[],devices=[],events=[],serverReady=false,localMode=!serverMode,currentPolicyRevision=0;
 
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const validHost=v=>{if(!v||v.length>253||/[\s/@?#:]/.test(v))return false;const h=v.toLowerCase().replace(/\.$/,"");return /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(h)};
@@ -36,7 +36,14 @@ function renderDevices(){
  if(!serverReady){box.className="placeholder";box.innerHTML="<span>▣</span><b>Aguardando autenticação</b><p>O inventário é carregado diretamente da API do servidor Costalog.</p>";return}
  if(!devices.length){box.className="placeholder";box.innerHTML="<span>▣</span><b>Nenhum dispositivo registrado</b><p>Gere um código de instalação para cadastrar o primeiro computador.</p>";return}
  box.className="data-list";
- box.innerHTML=devices.map(d=>{const next=d.status==="active"?"revoked":"active";const label=next==="revoked"?"Revogar":"Reativar";return '<article class="data-row"><div><b>'+esc(d.deviceName||d.hostname||d.name||"Computador")+'</b><small>'+esc(d.username||"Usuário não informado")+' · '+esc(d.lastSeenAt?new Date(d.lastSeenAt).toLocaleString("pt-BR"):"Sem sincronização")+'</small></div><div class="device-row-actions"><span class="site-status">'+esc(d.status||"REGISTRADO")+'</span><button class="remove" data-device-id="'+esc(d.id)+'" data-next-status="'+next+'" type="button">'+label+'</button></div></article>'}).join("");
+ box.innerHTML=devices.map(d=>{
+  const applied=Number(d.policyRevision||0);
+  const synced=applied>=currentPolicyRevision;
+  const next=d.status==="active"?"revoked":"active";
+  const label=next==="revoked"?"Revogar":"Reativar";
+  const policyLabel=synced?"POLÍTICA ATUALIZADA":"AGUARDANDO SINCRONIZAÇÃO";
+  return '<article class="data-row"><div><b>'+esc(d.deviceName||d.hostname||d.name||"Computador")+'</b><small>'+esc(d.username||"Usuário não informado")+' · '+esc(d.lastSeenAt?new Date(d.lastSeenAt).toLocaleString("pt-BR"):"Sem sincronização")+' · Política v'+applied+'</small></div><div class="device-row-actions"><span class="site-status">'+esc(d.status||"REGISTRADO")+'</span><span class="policy-status '+(synced?"synced":"pending")+'">'+policyLabel+'</span><button class="remove" data-device-id="'+esc(d.id)+'" data-next-status="'+next+'" type="button">'+label+'</button></div></article>';
+ }).join("");
 }
 function renderEvents(){
  $("#eventCount").textContent=serverReady?String(events.length):"—";
@@ -47,6 +54,7 @@ function renderEvents(){
 }
 function renderPolicy(policy){
  const badge=$("#policyState");
+ currentPolicyRevision=Number(policy?.revision??0);
  if(localMode){badge.textContent="Rascunho local";badge.className="pill warning";$("#policyVersion").textContent=localStorage.getItem(DRAFT_VERSION)||"0";return}
  if(!serverReady){badge.textContent="Aguardando autenticação";badge.className="pill muted";$("#policyVersion").textContent="—";return}
  badge.textContent=policy?.status==="published"?"Política publicada":"Política no servidor";
@@ -75,12 +83,12 @@ async function refreshServer(){
  localMode=false;editable(false);status("CONECTANDO À API…","pending");
  try{await API.health()}
  catch(error){
-  serverReady=false;sites=[];devices=[];events=[];status("API INDISPONÍVEL","error");
+  serverReady=false;sites=[];devices=[];events=[];currentPolicyRevision=0;status("API INDISPONÍVEL","error");
   notice("<b>Servidor configurado, mas indisponível:</b> "+esc(error.message)+" O painel não usará dados locais como substituto.","error");
   feedback(error.message,true);renderSites();renderDevices();renderEvents();renderPolicy(null);return;
  }
  if(!API.hasAccessToken()){
-  serverReady=false;sites=[];devices=[];events=[];status("API DISPONÍVEL · LOGIN PENDENTE","pending");
+  serverReady=false;sites=[];devices=[];events=[];currentPolicyRevision=0;status("API DISPONÍVEL · LOGIN PENDENTE","pending");
   notice("<b>API respondendo:</b> entre com a conta administrativa do servidor. Nenhum dado será alterado sem autenticação.","warning");
   renderSites();renderDevices();renderEvents();renderPolicy(null);return;
  }
@@ -93,7 +101,7 @@ async function refreshServer(){
   feedback("Dados atualizados a partir do servidor da empresa.");
   renderSites();renderDevices();renderEvents();renderPolicy(policyData);editable(true);hideGate();
  }catch(error){
-  serverReady=false;sites=[];devices=[];events=[];status("FALHA DE AUTORIZAÇÃO / API","error");
+  serverReady=false;sites=[];devices=[];events=[];currentPolicyRevision=0;status("FALHA DE AUTORIZAÇÃO / API","error");
   notice("<b>Falha ao validar a sessão ou carregar os dados:</b> "+esc(error.message)+" As alterações foram bloqueadas.","error");
   feedback(error.message,true);renderSites();renderDevices();renderEvents();renderPolicy(null);editable(false);
   if(/Sessão|autenticada|expirada/i.test(error.message)){API.clearAccessToken();showGate("Sua sessão expirou. Entre novamente.")}
@@ -153,7 +161,7 @@ $("#syncSites").addEventListener("click",refresh);
 $("#publishPolicy").addEventListener("click",async()=>{
  if(!serverReady)return;
  const button=$("#publishPolicy");button.disabled=true;
- try{const result=await API.publishPolicy();await refreshServer();feedback("Política publicada. Revisão "+result.revision+".")}
+ try{const result=await API.publishPolicy();await refreshServer();feedback("Política publicada. Revisão "+result.revision+". "+Number(result.devicesPendingSync||0)+" computador(es) aguardando sincronização.")}
  catch(error){feedback(error.message,true)}
  finally{button.disabled=!serverReady}
 });
