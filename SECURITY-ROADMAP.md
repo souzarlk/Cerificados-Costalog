@@ -13,8 +13,8 @@ A versão publicada é um front-end estático. O código atual mantém dados no 
 
 ## Arquitetura-alvo
 1. **Portal administrativo:** cadastro e gestão de certificados, dispositivos, usuários, domínios autorizados, políticas e eventos.
-2. **API autenticada:** única autoridade para políticas, permissões e auditoria. O navegador não será fonte de verdade para papéis ou permissões.
-3. **Banco de dados:** metadados, políticas, dispositivos, usuários e eventos. Nunca armazenar senha de PFX em texto puro.
+2. **API autenticada no servidor Costalog:** única autoridade para políticas, permissões e auditoria. O portal conversa com ela por HTTPS; o navegador não será fonte de verdade para papéis ou permissões.
+3. **Banco de dados no servidor da empresa:** tecnologia independente do portal. A API acessa o banco por uma camada de repositórios; a tecnologia (por exemplo, SQL Server ou PostgreSQL) será definida pela infraestrutura. Nunca armazenar senha de PFX em texto puro.
 4. **Windows Agent:** serviço instalado e gerenciado nos computadores; identifica o dispositivo, recebe políticas assinadas e registra eventos.
 5. **Chave privada:** permanece no Windows sob controle de um provedor criptográfico/serviço de assinatura com autorização. ACLs e políticas do navegador, isoladamente, não garantem bloqueio por domínio.
 6. **Chrome e Edge:** aplicar políticas corporativas como camada complementar; não considerar seleção automática de certificado como mecanismo de bloqueio absoluto.
@@ -37,10 +37,10 @@ Caso contrário: negar, registrar motivo, horário, dispositivo, usuário, certi
 
 ## Etapas de implementação
 - [x] Registrar as decisões e a arquitetura em branch separada.
-- [ ] Definir backend e ambiente de hospedagem.
-- [x] Criar primeira interface do módulo AGENTE COSTALOG no portal (rascunho local, sem sincronização ou enforcement).
-- [ ] Implementar autenticação real, papéis e API.
-- [ ] Migrar metadados e auditoria para banco de dados.
+- [ ] Definir e disponibilizar o host HTTPS da API no servidor da empresa (o banco permanece atrás da API).
+- [x] Criar primeira interface do módulo AGENTE COSTALOG no portal (rascunho local, sem sincronização ou enforcement).\n- [x] Criar cliente REST e ponto único de configuração do endereço da API corporativa.\n- [x] Documentar contrato OpenAPI e arquitetura de persistência independente do banco.\n- [x] Separar modo local de rascunho do modo API; falhas da API não recorrem a dados locais.
+- [ ] Implementar autenticação corporativa OIDC/PKCE e validação de perfis na API.\n- [ ] Desenvolver e hospedar os endpoints da API no servidor Costalog.
+- [ ] Implementar a camada de repositórios e migrar metadados/auditoria para o banco escolhido pela empresa.
 - [ ] Remover armazenamento de PFX/senhas do localStorage e desativar download direto para usuários comuns.
 - [ ] Criar cadastro de dispositivos e políticas de allowlist.
 - [ ] Desenvolver e assinar o agente Windows e o provedor de chave com enforcement real.
