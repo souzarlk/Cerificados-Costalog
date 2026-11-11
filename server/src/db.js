@@ -28,13 +28,8 @@ const rawPool = mysql.createPool({
 });
 
 function normalizeSql(sql) {
-  return String(sql)
-    .replace(/::jsonb\b/gi, "")
-    .replace(/::int\b/gi, "")
-    .replace(/\$(\d+)/g, "?")
-    .replace(/NOW\(\)\s*\+\s*\(\?\s*\*\s*INTERVAL\s+'1 minute'\)/gi, "DATE_ADD(NOW(), INTERVAL ? MINUTE)");
+  return String(sql);
 }
-
 function normalizeRows(rows) {
   return rows.map(row => {
     const normalized = { ...row };
