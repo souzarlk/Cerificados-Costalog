@@ -32,7 +32,8 @@ public sealed class AgentWorker : BackgroundService
                     await EnrollAsync(config, stoppingToken);
                 config = AgentConfigStore.Load();
                 await HeartbeatAsync(config, stoppingToken);
-                await SyncPolicyAsync(config, stoppingToken);\n                await FlushPendingEventsAsync(config, stoppingToken);
+                await SyncPolicyAsync(config, stoppingToken);
+                await FlushPendingEventsAsync(config, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
