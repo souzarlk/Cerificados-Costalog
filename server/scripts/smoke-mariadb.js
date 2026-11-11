@@ -33,7 +33,7 @@ try {
     ["mariadb_smoke", "Smoke test", "MariaDB JSON insert", hostname, JSON.stringify(metadata)]
   );
   await client.query(
-    "INSERT INTO enrollment_tokens(token_hash,created_by,expires_at) VALUES(?,?,DATE_ADD(NOW(3), INTERVAL ? MINUTE))",
+    "INSERT INTO enrollment_tokens(token_hash,created_by,expires_at) VALUES(?,?,TIMESTAMPADD(MINUTE, ?, NOW(3)))",
     ["a".repeat(64), id, 10]
   );
 
