@@ -1,7 +1,8 @@
 "use strict";
 const NATIVE_HOST="com.costalog.agent";
 const BLOCK_RULE_ID=1,ALLOW_RULE_START=100;
-let latestPolicyState=null;\nconst lastReported=new Map();
+let latestPolicyState=null;
+const lastReported=new Map();
 
 async function currentRules(){return chrome.declarativeNetRequest.getDynamicRules()}
 async function replaceRules(rules){
