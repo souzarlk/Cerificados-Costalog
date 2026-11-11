@@ -40,7 +40,8 @@ async function publishPolicySnapshot(client, admin) {
     "INSERT INTO agent_events(event_type,title,message,metadata) VALUES($1,$2,$3,$4::jsonb)",
     ["admin_policy_published", "Política publicada", "Revisão " + revision, JSON.stringify({ adminId: admin.id, revision, domains: enabledSites.rowCount })]
   );
-  return { revision, publishedAt, domains: enabledSites.rowCount };
+  const pendingDevices = await client.query("SELECT COUNT(*)::int AS total FROM agent_devices WHERE status='active' AND policy_revision < $1", [revision]);
+  return { revision, publishedAt, domains: enabledSites.rowCount, devicesPendingSync: pendingDevices.rows[0].total };
 }
 
 router.get("/sites", async (req, res, next) => {
@@ -174,7 +175,7 @@ router.post("/policy/publish", requireAdminWrite, async (req, res, next) => {
     await client.query("BEGIN");
     const publication = await publishPolicySnapshot(client, req.admin);
     await client.query("COMMIT");
-    res.json({ ...publication, status: "published", devicesPendingSync: 0 });
+    res.json({ ...publication, status: "published" });
   } catch (e) {
     try { await client.query("ROLLBACK"); } catch {}
     next(e);
