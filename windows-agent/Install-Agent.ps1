@@ -4,6 +4,8 @@ $serviceName = "CostalogAgent"
 $displayName = "AGENTE COSTALOG"
 $programRoot = Join-Path $env:ProgramFiles "Costalog/Agent"
 $dataRoot = Join-Path $env:ProgramData "Costalog/Agent"
+$privateRoot = Join-Path $dataRoot "Private"
+$publicRoot = Join-Path $dataRoot "Public"
 $pendingRoot = Join-Path $dataRoot "pending-events"
 $dist = Join-Path $PSScriptRoot "dist"
 
@@ -30,7 +32,7 @@ function Add-ForcedExtension([string]$BrowserName, [string]$PolicyPath, [string]
 if (-not (Test-Path (Join-Path $dist "Service/Costalog.Agent.Service.exe"))) {
   throw "Arquivos compilados não encontrados. Execute Publish-Agent.ps1 primeiro."
 }
-New-Item -ItemType Directory -Force -Path $programRoot,$dataRoot,$pendingRoot | Out-Null
+New-Item -ItemType Directory -Force -Path $programRoot,$dataRoot,$privateRoot,$publicRoot,$pendingRoot | Out-Null
 Copy-Item (Join-Path $dist "Service/*") $programRoot -Recurse -Force
 Copy-Item (Join-Path $dist "Setup/*") $programRoot -Recurse -Force
 Copy-Item (Join-Path $dist "NativeHost/*") $programRoot -Recurse -Force
@@ -58,13 +60,16 @@ if ($LASTEXITCODE -ne 0) {
   throw "Configuração cancelada ou inválida."
 }
 
-$configPath = Join-Path $dataRoot "agent.json"
+$configPath = Join-Path $privateRoot "agent.json"
 if (-not (Test-Path $configPath)) { throw "Arquivo de configuração não foi criado." }
 $config = Get-Content $configPath -Raw | ConvertFrom-Json
 
-& icacls $dataRoot /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "BUILTIN\Administrators:(OI)(CI)F" "NT SERVICE\CostalogAgent:(OI)(CI)M" "BUILTIN\Users:(OI)(CI)RX" | Out-Null
-& icacls $configPath /inheritance:r /grant:r "SYSTEM:F" "BUILTIN\Administrators:F" "NT SERVICE\CostalogAgent:F" | Out-Null
+# Raiz apenas para navegação; segredos ficam isolados em Private.
+& icacls $dataRoot /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "BUILTIN\Administrators:(OI)(CI)F" "NT SERVICE\CostalogAgent:(OI)(CI)M" "BUILTIN\Users:RX" | Out-Null
+& icacls $privateRoot /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "BUILTIN\Administrators:(OI)(CI)F" "NT SERVICE\CostalogAgent:(OI)(CI)M" | Out-Null
+& icacls $publicRoot /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "BUILTIN\Administrators:(OI)(CI)F" "NT SERVICE\CostalogAgent:(OI)(CI)M" "BUILTIN\Users:(OI)(CI)RX" | Out-Null
 & icacls $pendingRoot /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "BUILTIN\Administrators:(OI)(CI)F" "NT SERVICE\CostalogAgent:(OI)(CI)M" "BUILTIN\Users:(OI)(CI)M" | Out-Null
+& icacls $configPath /inheritance:r /grant:r "SYSTEM:F" "BUILTIN\Administrators:F" "NT SERVICE\CostalogAgent:F" | Out-Null
 
  $extensionId = ""
  $updateUrl = ""
@@ -99,7 +104,7 @@ if ($config.installMode -eq "certificate-and-web") {
 
 $installInfo = @{ extensionId = $extensionId; updateUrl = $updateUrl; installMode = $config.installMode; installedAt = (Get-Date).ToUniversalTime().ToString("o") }
 $installInfo | ConvertTo-Json -Depth 4 | Set-Content -Path (Join-Path $dataRoot "agent-install-info.json") -Encoding UTF8
-& icacls $dataRoot /grant "BUILTIN\Users:(OI)(CI)RX" | Out-Null
+
 Start-Service -Name $serviceName
 Start-Sleep -Seconds 3
 $state = Get-Service -Name $serviceName
