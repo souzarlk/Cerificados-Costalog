@@ -5,7 +5,7 @@ Este guia cobre a implantação da API e do portal no servidor da empresa. O nav
 ## Componentes
 
 - Node.js 22 LTS para executar a API.
-- PostgreSQL 14+ como banco de referência desta primeira entrega.
+- MariaDB 10.6+ (recomendado MariaDB 11.4) como banco da aplicação.
 - IIS com URL Rewrite + Application Request Routing (ARR), ou proxy HTTPS corporativo equivalente.
 - Certificado TLS válido para o endereço interno/externo definido pela TI.
 - Serviço Windows para manter a API em execução (por exemplo, WinSW/NSSM aprovados pela infraestrutura).
@@ -22,7 +22,7 @@ Este guia cobre a implantação da API e do portal no servidor da empresa. O nav
 1. Instale Node.js 22 LTS no Windows Server.
 2. Copie a pasta server/ para C:\Costalog\AGENTE-COSTALOG\server\.
 3. Crie .env a partir de .env.example, fora do Git, com:
-   - DATABASE_URL apontando para o host privado do PostgreSQL;
+   - DB_HOST, DB_PORT, DB_USER, DB_PASSWORD e DB_NAME apontando para o MariaDB privado;
    - JWT_SECRET aleatório de pelo menos 32 caracteres;
    - POLICY_SIGNING_PRIVATE_KEY_B64 em cofre/arquivo restrito;
    - ALLOWED_ORIGINS com a origem exata do portal;
@@ -62,9 +62,9 @@ O apiPrefix permanece /api/v1. Se o IIS servir portal e API sob a mesma origem, 
 
 ## Banco e rede
 
-- Permita conexão PostgreSQL somente a partir do host da API e dos administradores de banco.
-- Não publique a porta 5432 para a internet.
-- Use usuário exclusivo do AGENTE COSTALOG com permissões mínimas.
+- Permita conexão MariaDB somente a partir do host da API e dos administradores de banco.
+- Não publique a porta 3306 para a internet.
+- Use usuário exclusivo do AGENTE COSTALOG com permissões mínimas; não use o usuário root na API.
 - Ative backup diário, retenção, teste de restauração e monitoramento de espaço.
 - Restrinja leitura de .env, chaves e backups a contas de serviço e administradores autorizados.
 
