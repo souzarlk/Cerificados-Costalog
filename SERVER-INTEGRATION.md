@@ -179,19 +179,25 @@ As credenciais do banco devem ficar em secret manager/variáveis protegidas do s
 Implementado no repositório:
 - configuração central do endereço da API em `agente-costalog-config.js`; 
 - cliente REST isolado em `agente-costalog-api.js`;
-- cliente REST separado da interface;
+
 - modo local de rascunho explicitamente identificado;
+- painel com login da API, gestão de sites, publicação e visualização de dispositivos/eventos;
 - modo API sem fallback para dados locais em caso de falha;
-- tela preparada para sites, dispositivos, auditoria e publicação;
-- contrato de integração para orientar a equipe que desenvolverá o serviço.
+- API Node/Express, esquema inicial PostgreSQL, scripts de migração e bootstrap de administrador;
+- enrollment de dispositivos, heartbeat, distribuição de políticas assinadas e registro de eventos;
+- serviço Windows .NET, assistente A/B, armazenamento DPAPI e Native Messaging Host;
+- extensão Chrome/Edge com bloqueio de páginas principais em Opção B;
+- webhook HTTPS opcional para alerta à TI;
+- contrato OpenAPI e documentação de implantação no servidor Costalog.
 
 Ainda pendente:
-- API corporativa executável;
-- banco conectado e migrações;
-- login OIDC/PKCE e autorização real;
-- implementação dos endpoints;
-- processo de assinatura e publicação de políticas;
-- agente Windows e provedor de chave com enforcement;
-- alertas e homologação.
+- configurar endereço HTTPS da API no `agente-costalog-config.js` e publicar portal/API no servidor da Costalog;
+- provisionar banco PostgreSQL (ou implementar adaptador/migrações para o banco escolhido), credenciais e backups;
+- gerar e guardar a chave privada de assinatura no servidor; distribuir somente a chave pública aos agentes;
+- criar administrador inicial e definir política de identidade corporativa/SSO;
+- compilar e assinar instaladores e empacotar CRX da extensão para distribuição gerenciada;
+- implementar e homologar provedor criptográfico CNG/KSP para bloqueio real do uso da chave A1 (Opção A);
+- configurar webhook corporativo de alertas;
+- executar testes completos no Windows, portais Costalog, bypass, atualização/revogação e operação offline.
 
 **Esta entrega não bloqueia o uso de certificados ainda. Não publicar como proteção ativa nem cadastrar certificados reais com base nesta interface.**
