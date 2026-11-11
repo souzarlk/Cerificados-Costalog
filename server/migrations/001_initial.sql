@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+BEGIN;
 
 CREATE TABLE IF NOT EXISTS admin_users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS agent_devices (
   agent_version TEXT NOT NULL DEFAULT '',
   install_mode TEXT NOT NULL CHECK (install_mode IN ('certificate','certificate-and-web')),
   token_hash TEXT NOT NULL UNIQUE,
-  status NOT NULL DEFAULT 'active' CHECK (status IN ('pending','active','disabled','revoked')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('pending','active','disabled','revoked')),
   policy_revision INTEGER NOT NULL DEFAULT 0,
   last_seen_at TIMESTAMPTZ,
   enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -71,3 +71,5 @@ CREATE INDEX IF NOT EXISTS idx_agent_events_created_at ON agent_events(created_a
 CREATE INDEX IF NOT EXISTS idx_agent_events_device ON agent_events(device_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_devices_status ON agent_devices(status);
 CREATE INDEX IF NOT EXISTS idx_agent_sites_enabled ON agent_sites(enabled);
+
+COMMIT;
