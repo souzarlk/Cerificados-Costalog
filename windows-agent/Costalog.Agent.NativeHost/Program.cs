@@ -65,11 +65,13 @@ static object WriteBlockedEvent(JsonElement request)
     if (!request.TryGetProperty("domain", out var domainProperty))
         return new { ok = false, error = "missing-domain" };
     var domain = (domainProperty.GetString() ?? "").Trim().ToLowerInvariant();
-    if (domain.Length > 253 || !System.Text.RegularExpressions.Regex.IsMatch(domain, @"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?.)+[a-z]{2,63}$"))
+    if (domain.Length > 253 || !System.Text.RegularExpressions.Regex.IsMatch(domain, @"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$"))
         return new { ok = false, error = "invalid-domain" };
 
     var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Costalog", "Agent", "pending-events");
     Directory.CreateDirectory(root);
+    if (Directory.EnumerateFiles(root, "*.json").Take(5000).Count() >= 5000)
+        return new { ok = false, error = "queue-full" };
     var item = new
     {
         eventType = "browser_navigation_blocked",
