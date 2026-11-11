@@ -65,7 +65,7 @@ Prefixo padrão: `/api/v1`. Todos os corpos e respostas são JSON.
 | GET | `/health` | Verificar disponibilidade sem dados sensíveis |
 | GET | `/admin/agent/sites` | Listar domínios |
 | POST | `/admin/agent/sites` | Cadastrar domínio |
-| DELETE | `/admin/agent/sites/{siteId}` | Remover domínio |
+| PATCH | `/admin/agent/sites/{siteId}` | Ativar/desativar domínio e publicar nova política automaticamente |\n| DELETE | `/admin/agent/sites/{siteId}` | Remover domínio e publicar nova política automaticamente |
 | GET | `/admin/agent/devices` | Listar instalações do agente |
 | GET | `/admin/agent/events?limit=50` | Consultar auditoria |
 | GET | `/admin/agent/policy` | Consultar revisão e estado da política |
@@ -166,7 +166,7 @@ As credenciais do banco devem ficar em secret manager/variáveis protegidas do s
 
 ## Sincronização e segurança do agente
 
-- Toda alteração administrativa deve gerar nova revisão da política e trilha de auditoria.
+- Toda inclusão, remoção, ativação ou desativação de domínio deve gerar, na mesma transação, nova revisão da política e trilha de auditoria. Os agentes consultam a revisão na sincronização periódica (45 segundos por padrão).
 - A publicação deve validar domínios, gerar versão e assinar o documento da política.
 - Cada agente autentica o dispositivo separadamente do login do administrador.
 - O agente verifica assinatura, versão, validade e integridade antes de aplicar uma política.
