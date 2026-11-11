@@ -5,7 +5,7 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $destinationPath = [System.IO.Path]::GetFullPath($Destination)
-$excludedDirectories = @(".git",".github","server","windows-agent","browser-extension","api-contract","node_modules")
+$excludedDirectories = @(".git",".github","server","windows-agent","browser-extension","api-contract","security","node_modules")
 $excludedFiles = @("*.md",".gitignore",".env",".env.*","*.pem","*.key","*.crx","*.log","*.sql","package.json")
 
 if ($ApiBaseUrl) {
@@ -34,7 +34,7 @@ $configPath = Join-Path $destinationPath "agente-costalog-config.js"
 if (-not (Test-Path $configPath)) { throw "agente-costalog-config.js não foi incluído no pacote." }
 $config = Get-Content -LiteralPath $configPath -Raw
 if ($ApiBaseUrl) {
-  $config = [regex]::Replace($config,'apiBaseUrl:\s*""','apiBaseUrl: "' + $ApiBaseUrl + '"')
+  $config = [regex]::Replace($config,'apiBaseUrl:\s*"[^"]*"','apiBaseUrl: "' + $ApiBaseUrl + '"')
   Set-Content -LiteralPath $configPath -Value $config -Encoding UTF8
   Write-Host "API configurada no pacote exportado: $ApiBaseUrl"
 } else {
