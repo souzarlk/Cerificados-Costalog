@@ -4,7 +4,7 @@
 
 O portal estático hospeda somente a interface administrativa e pode ser movido para o mesmo servidor da API na implantação final. O navegador **não acessa o banco de dados diretamente**. A comunicação ocorre por uma API HTTPS hospedada na infraestrutura da Costalog; essa API é responsável por autenticação, regras de negócio, auditoria e persistência no banco escolhido pela empresa.
 
-O contrato REST e o portal são independentes do banco. A primeira implementação do backend usa PostgreSQL; se o servidor da empresa utilizar SQL Server, MariaDB ou outro produto, será necessário criar o adaptador/repositórios e as migrações correspondentes no backend, sem alterar as telas nem o contrato HTTP.
+O contrato REST e o portal são independentes do banco. A implementação do backend utiliza MariaDB/InnoDB com driver mysql2. O portal e o contrato HTTP não acessam o banco diretamente.
 
 ## Ponto único de configuração
 
@@ -160,7 +160,7 @@ A implementação do backend deverá usar uma camada de repositórios, por exemp
 - `AuditEventRepository`
 - `UserRepository`
 
-Os serviços de domínio não devem depender de SQL específico. A escolha do driver, connection string, pool, migrações e backup fica no backend e na infraestrutura, nunca no front-end.
+Os serviços de domínio não devem depender de SQL específico do MariaDB. A escolha do driver, connection string, pool, migrações e backup fica no backend e na infraestrutura, nunca no front-end.
 
 Entidades mínimas sugeridas:
 - sites autorizados (hostname normalizado, nome, ativo, autor da mudança e timestamps);
@@ -189,7 +189,7 @@ Implementado no repositório:
 - modo local de rascunho explicitamente identificado;
 - painel com login da API, gestão de sites, publicação e visualização de dispositivos/eventos;
 - modo API sem fallback para dados locais em caso de falha;
-- API Node/Express, esquema inicial PostgreSQL, scripts de migração e bootstrap de administrador;
+- API Node/Express, esquema inicial MariaDB, scripts de migração e bootstrap de administrador;
 - enrollment de dispositivos, heartbeat, distribuição de políticas assinadas e registro de eventos;
 - serviço Windows .NET, assistente A/B, armazenamento DPAPI e Native Messaging Host;
 - extensão Chrome/Edge com bloqueio de páginas principais em Opção B;
@@ -198,7 +198,7 @@ Implementado no repositório:
 
 Ainda pendente:
 - configurar endereço HTTPS da API no `agente-costalog-config.js` e publicar portal/API no servidor da Costalog;
-- provisionar banco PostgreSQL (ou implementar adaptador/migrações para o banco escolhido), credenciais e backups;
+- provisionar o banco MariaDB no servidor, criar usuário restrito da aplicação, configurar credenciais e backups;
 - gerar e guardar a chave privada de assinatura no servidor; distribuir somente a chave pública aos agentes;
 - criar administrador inicial e definir política de identidade corporativa/SSO;
 - compilar e assinar instaladores e empacotar CRX da extensão para distribuição gerenciada;
