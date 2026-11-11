@@ -30,7 +30,7 @@ async function applyState(state){
    id:ALLOW_RULE_START+index,
    priority:100,
    action:{type:"allow"},
-   condition:{regexFilter:"^https?://"+escaped+"(?::[0-9]+)?(?:/|$)",resourceTypes:["main_frame"]}
+   condition:{regexFilter:"^https://"+escaped+"(?:/|$)",resourceTypes:["main_frame"]}
   });
  });
  await replaceRules(rules);
