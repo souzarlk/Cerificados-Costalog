@@ -9,7 +9,7 @@ API para hospedar no servidor da Costalog. O portal web e o agente Windows conso
 - HTTPS via proxy reverso (IIS, Nginx ou infraestrutura corporativa).
 - Uma origem web autorizada configurada em `ALLOWED_ORIGINS`.
 
-A camada HTTP não depende do banco diretamente. Nesta primeira versão foi implementado um adaptador PostgreSQL em `src/db.js`. Caso a infraestrutura da empresa utilize SQL Server ou outro banco, a substituição fica concentrada no adaptador e nas migrações SQL; o contrato REST e as telas não precisam mudar. Não será necessário expor o banco à internet.
+A API é a única camada que acessa o banco. Nesta primeira versão foi implementado PostgreSQL em `src/db.js` e as consultas/migrações usam SQL compatível com PostgreSQL. Se a infraestrutura decidir utilizar SQL Server, MariaDB ou outro banco, o backend precisará receber o driver, repositórios/consultas e migrações específicos; o contrato REST e as telas não precisam mudar. O banco nunca deve ficar exposto à internet.
 
 ## Preparação no servidor
 
@@ -51,7 +51,7 @@ Execute `npm run keys:generate` em ambiente seguro. Guarde `POLICY_SIGNING_PRIVA
 
 ## Autenticação
 
-A primeira versão disponibiliza login administrativo por e-mail/senha, com hash bcrypt e JWT de curta duração. Credenciais são criadas por comando administrativo, nunca pelo front-end. O login corporativo SSO/OIDC pode substituir esse mecanismo sem alterar os endpoints de negócio. No painel web, mantenha o access token apenas em memória.
+A primeira versão disponibiliza login administrativo por e-mail/senha, com hash bcrypt e JWT de curta duração. Credenciais são criadas por comando administrativo, nunca pelo front-end. O login corporativo SSO/OIDC poderá substituir esse mecanismo sem alterar os endpoints de negócio. No painel web, o access token permanece apenas em memória. Ao cadastrar ou remover um site, a API cria automaticamente uma nova revisão assinada; os agentes buscam a revisão na sincronização seguinte (intervalo padrão de 45 segundos).
 
 O cadastro de dispositivos usa token de enrollment de uso único, criado em `POST /api/v1/admin/agent/enrollment-tokens`. O token do dispositivo é exibido somente uma vez e deverá ser protegido localmente pelo Windows Agent usando DPAPI e ACL.
 
@@ -63,9 +63,9 @@ Veja `../api-contract/openapi.yaml` para o contrato completo.
 - `POST /api/v1/auth/login`, `GET /api/v1/auth/me`
 - `GET/POST /api/v1/admin/agent/sites`
 - `DELETE /api/v1/admin/agent/sites/{siteId}`
-- `GET /api/v1/admin/agent/devices`, `PATCH /api/v1/admin/agent/devices/{deviceId}/status`
-- `POST /api/v1/admin/agent/enrollment-tokens`
 - `GET /api/v1/admin/agent/devices`
+- `PATCH /api/v1/admin/agent/devices/{deviceId}/status`
+- `POST /api/v1/admin/agent/enrollment-tokens`
 - `GET /api/v1/admin/agent/events?limit=50`
 - `GET /api/v1/admin/agent/policy`, `POST /api/v1/admin/agent/policy/publish`
 - `POST /api/v1/admin/agent/enrollment-tokens`
