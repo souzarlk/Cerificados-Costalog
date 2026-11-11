@@ -4,7 +4,7 @@
   "short_name": "AGENTE COSTALOG",
   "description": "Aplica a política de navegação do AGENTE COSTALOG nos navegadores gerenciados.",
   "version": "1.0.0",
-  "permissions": ["declarativeNetRequest","nativeMessaging","alarms"],
+  "permissions": ["declarativeNetRequest","nativeMessaging","alarms","webNavigation"],
   "host_permissions": ["http://*/*","https://*/*"],
   "background": { "service_worker": "service-worker.js" },
   "minimum_chrome_version": "120"
