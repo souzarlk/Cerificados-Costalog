@@ -1,3 +1,4 @@
+#requires -Version 7.0
 param(
   [string]$SourceDirectory = (Join-Path $PSScriptRoot "..\browser-extension"),
   [string]$OutputDirectory = (Join-Path $PSScriptRoot "dist\ExtensionPackage"),
@@ -32,7 +33,9 @@ $stagingCrx = "$staging.crx"
 $stagingKey = ""
 if ($PrivateKeyPath) {
   if (-not (Test-Path $PrivateKeyPath)) { throw "Chave privada da extensão não encontrada: $PrivateKeyPath" }
-  $stagingKey = Join-Path $OutputDirectory "extension-signing.pem"
+  $privateDir = Join-Path $OutputDirectory "private"
+  New-Item -ItemType Directory -Force -Path $privateDir | Out-Null
+  $stagingKey = Join-Path $privateDir "extension-signing.pem"
   Copy-Item $PrivateKeyPath $stagingKey -Force
   & $ChromePath "--pack-extension=$staging" "--pack-extension-key=$stagingKey"
 } else {
@@ -40,7 +43,9 @@ if ($PrivateKeyPath) {
   & $ChromePath "--pack-extension=$staging"
   $candidateKey = "$staging.pem"
   if (Test-Path $candidateKey) {
-    $stagingKey = Join-Path $OutputDirectory "extension-signing.pem"
+    $privateDir = Join-Path $OutputDirectory "private"
+    New-Item -ItemType Directory -Force -Path $privateDir | Out-Null
+    $stagingKey = Join-Path $privateDir "extension-signing.pem"
     Move-Item $candidateKey $stagingKey -Force
   }
 }
@@ -88,4 +93,4 @@ Write-Host "CRX: $crxOut"
 Write-Host "Manifesto de atualização: $(Join-Path $OutputDirectory 'updates.xml')"
 Write-Host "URL a informar na instalação: $updateUrl"
 Write-Host "CHAVE PRIVADA: $stagingKey"
-Write-Warning "Não publique extension-signing.pem no servidor web. Guarde-a em cofre institucional; perder esta chave exige reinstalar a extensão com outro ID."
+Write-Warning "Não publique a pasta private no servidor web. Hospede SOMENTE agente-costalog.crx e updates.xml; guarde a chave em private/extension-signing.pem em cofre institucional."
