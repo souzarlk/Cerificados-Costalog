@@ -51,3 +51,13 @@ jobs:
         run: dotnet build windows-agent/Costalog.Agent.Setup/Costalog.Agent.Setup.csproj -c Release
       - name: Build Native Messaging Host
         run: dotnet build windows-agent/Costalog.Agent.NativeHost/Costalog.Agent.NativeHost.csproj -c Release
+      - name: Publish Windows installer package
+        shell: pwsh
+        run: .\windows-agent\Publish-Agent.ps1
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: agente-costalog-windows-x64
+          path: windows-agent/dist/
+          if-no-files-found: error
+          retention-days: 14
