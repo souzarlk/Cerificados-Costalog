@@ -224,9 +224,21 @@ showGate("");
 if(serverMode){
  refreshServer();
 }else{
- status("AGUARDANDO LOGIN CENTRAL","warning");
- notice("<b>Login unificado:</b> entre com o mesmo usuário e senha da Central de Notas Fiscais Costalog.","warning");
+ status("AGUARDANDO SESSÃO CENTRAL","warning");
+ notice("<b>Login único:</b> o AGENTE COSTALOG reconhece automaticamente uma sessão ativa da Central de Notas Fiscais. Se ainda não estiver conectado, entre com o mesmo usuário e senha.","warning");
  editable(false);
  renderSites();renderDevices();renderEvents();renderPolicy(null);
+ if(API.hasAccessToken()){
+  API.resumeIdentitySession().then(async valid=>{
+   if(!valid){showGate("Sua sessão da Central expirou. Entre novamente.");return}
+   await refreshLocal();
+   hideGate();
+   status("SESSÃO CENTRAL RECONHECIDA · MODO RASCUNHO","warning");
+   notice("<b>Sessão única reconhecida:</b> você já estava autenticado na Central de Notas Fiscais. O servidor do AGENTE COSTALOG ainda não foi conectado; alterações permanecem neste navegador e não ativam proteção nos computadores.","warning");
+  }).catch(error=>{
+   API.clearAccessToken();
+   showGate(error.message||"Não foi possível validar sua sessão da Central de Notas Fiscais.");
+  });
+ }
 }
 })();
