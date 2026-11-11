@@ -1,0 +1,7 @@
+dist/
+**/bin/
+**/obj/
+*.crx
+*.pem
+!policy-public.pem
+ExtensionPackage/
