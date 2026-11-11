@@ -74,6 +74,7 @@
     listSites: () => request("/admin/agent/sites"),
     createSite: body => request("/admin/agent/sites", { method: "POST", body }),
     deleteSite: id => request("/admin/agent/sites/" + encodeURIComponent(id), { method: "DELETE" }),
+    setSiteEnabled: (id,enabled) => request("/admin/agent/sites/"+encodeURIComponent(id),{method:"PATCH",body:{enabled}}),
     listDevices: () => request("/admin/agent/devices"),
     setDeviceStatus: (id,status) => request("/admin/agent/devices/"+encodeURIComponent(id)+"/status",{method:"PATCH",body:{status}}),
     listEvents: limit => request("/admin/agent/events?limit=" + encodeURIComponent(limit || 50)),
