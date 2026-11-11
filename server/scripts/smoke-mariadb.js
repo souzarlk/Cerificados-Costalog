@@ -25,6 +25,10 @@ try {
     ["CI smoke", hostname, true, id, id]
   );
   await client.query(
+    "INSERT INTO agent_devices(id,device_name,windows_username,os_version,agent_version,install_mode,token_hash,status) VALUES(?,?,?,?,?,?,?,'active')",
+    [id, "CI-WINDOWS", "ci", "windows", "1.0.0", "certificate", "b".repeat(64)]
+  );
+  await client.query(
     "INSERT INTO agent_policies(revision,status,payload,published_by,published_at) VALUES(?,?,?,?,NOW(3))",
     [991337, "published", JSON.stringify(payload), id]
   );
@@ -46,8 +50,7 @@ try {
   if (!expiry.rowCount || !expiry.rows[0].expiresAt) throw new Error("MariaDB DATE_ADD interval binding failed.");
 
   const updated = await client.query("UPDATE agent_devices SET policy_revision=GREATEST(policy_revision,?) WHERE id=?", [12, id]);
-  // This device intentionally does not exist; the statement must execute cleanly.
-  if (updated.rowCount !== 0) throw new Error("Unexpected device update count.");
+  if (updated.rowCount !== 1) throw new Error("MariaDB device update failed.");
 
   await client.query("ROLLBACK");
   inTransaction = false;
