@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { query } from "../db.js";
+import { pool, query } from "../db.js";
 import { newOpaqueToken, hashToken, signPolicy } from "../security.js";
 
 const router = Router();
@@ -28,21 +28,29 @@ async function requireAgent(req,res,next) {
 }
 
 router.post("/enroll", async (req,res,next) => {
+  const client=await pool.connect();
   try {
     const input=enrollmentSchema.parse(req.body);
-    const result=await query("UPDATE enrollment_tokens SET used_at=NOW() WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() RETURNING id",
-      [hashToken(input.enrollmentToken)]);
-    if(!result.rowCount)return res.status(401).json({error:"invalid_enrollment_token",message:"Token de instalação inválido, expirado ou já utilizado."});
     const deviceToken=newOpaqueToken(48);
-    const inserted=await query(
+    await client.query("BEGIN");
+    const tokenResult=await client.query(
+      "UPDATE enrollment_tokens SET used_at=NOW() WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() RETURNING id",
+      [hashToken(input.enrollmentToken)]
+    );
+    if(!tokenResult.rowCount){await client.query("ROLLBACK");return res.status(401).json({error:"invalid_enrollment_token",message:"Token de instalação inválido, expirado ou já utilizado."});}
+    const inserted=await client.query(
       "INSERT INTO agent_devices(device_name,windows_username,os_version,agent_version,install_mode,token_hash,status) VALUES($1,$2,$3,$4,$5,$6,'active') RETURNING id,device_name AS \"deviceName\",install_mode AS \"installMode\",status",
       [input.deviceName,input.windowsUsername,input.osVersion,input.agentVersion,input.installMode,hashToken(deviceToken)]
     );
     const device=inserted.rows[0];
-    await query("INSERT INTO agent_events(device_id,event_type,title,message,metadata) VALUES($1,$2,$3,$4,$5::jsonb)",
+    await client.query("INSERT INTO agent_events(device_id,event_type,title,message,metadata) VALUES($1,$2,$3,$4,$5::jsonb)",
       [device.id,"device_enrolled","Agente instalado",device.deviceName,JSON.stringify({installMode:device.installMode,agentVersion:input.agentVersion})]);
-    res.status(201).json({deviceId:device.id,deviceToken,deviceName:device.deviceName,installMode:device.installMode,warning:"Guarde a credencial do dispositivo com DPAPI/ACL local. Ela não poderá ser recuperada pelo painel."});
-  } catch(e) { next(e); }
+    await client.query("COMMIT");
+    res.status(201).json({deviceId:device.id,deviceToken,deviceName:device.deviceName,installMode:device.installMode,warning:"Token exibido uma única vez. O agente o protege localmente com DPAPI."});
+  } catch(e) {
+    try{await client.query("ROLLBACK")}catch{}
+    next(e);
+  } finally {client.release();}
 });
 
 router.use(requireAgent);
@@ -60,10 +68,12 @@ router.get("/policy", async (req,res,next) => {
     const result=await query("SELECT revision,status,payload,published_at FROM agent_policies WHERE status='published' ORDER BY revision DESC LIMIT 1");
     if(!result.rowCount)return res.status(404).json({error:"policy_not_published",message:"Nenhuma política foi publicada pela TI."});
     const row=result.rows[0];
+    const now=Date.now();
     const payload={
       ...row.payload,
       device:{id:req.device.id,name:req.device.device_name,installMode:req.device.install_mode},
-      issuedAt:new Date().toISOString(),\n      expiresAt:new Date(Date.now()+Math.max(1,Number(process.env.POLICY_VALIDITY_HOURS||24))*60*60*1000).toISOString()
+      issuedAt:new Date(now).toISOString(),
+      expiresAt:new Date(now+Math.max(1,Number(process.env.POLICY_VALIDITY_HOURS||24))*60*60*1000).toISOString()
     };
     const signed=signPolicy(payload);
     await query("UPDATE agent_devices SET last_seen_at=NOW(),policy_revision=$2 WHERE id=$1",[req.device.id,row.revision]);
