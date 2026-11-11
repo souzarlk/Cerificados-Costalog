@@ -1,0 +1,27 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: costalog_agent
+      POSTGRES_USER: costalog_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD in .env or deployment environment}
+    volumes:
+      - costalog_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U costalog_user -d costalog_agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Não expor a porta do banco na rede pública.
+volumes:
+  costalog_pgdata:
