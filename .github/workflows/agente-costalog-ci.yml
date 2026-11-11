@@ -11,22 +11,27 @@ jobs:
   api:
     runs-on: ubuntu-latest
     services:
-      postgres:
-        image: postgres:16
+      mariadb:
+        image: mariadb:11.4
         env:
-          POSTGRES_USER: costalog_ci
-          POSTGRES_PASSWORD: costalog_ci_password
-          POSTGRES_DB: costalog_ci
+          MARIADB_ROOT_PASSWORD: costalog_ci_root_password
+          MARIADB_USER: costalog_ci
+          MARIADB_PASSWORD: costalog_ci_password
+          MARIADB_DATABASE: costalog_ci
         ports:
-          - 5432:5432
+          - 3306:3306
         options: >-
-          --health-cmd "pg_isready -U costalog_ci -d costalog_ci"
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 20
     env:
-      DATABASE_URL: postgresql://costalog_ci:costalog_ci_password@localhost:5432/costalog_ci
-      DATABASE_SSL: "false"
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: costalog_ci
+      DB_PASSWORD: costalog_ci_password
+      DB_NAME: costalog_ci
+      DB_SSL: "false"
       JWT_SECRET: ci-only-not-for-production-0123456789abcdef
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +44,7 @@ jobs:
       - name: Audit production dependencies
         working-directory: server
         run: npm audit --omit=dev --audit-level=high
-      - name: Apply database migrations against PostgreSQL
+      - name: Apply database migrations against MariaDB 11.4
         working-directory: server
         run: npm run db:migrate
       - name: Check API JavaScript
