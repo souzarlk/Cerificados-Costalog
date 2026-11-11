@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -181,16 +182,23 @@ public sealed class AgentWorker : BackgroundService
             token.ThrowIfCancellationRequested();
             try
             {
+                var fileInfo = new FileInfo(file);
+                if (fileInfo.Length > 8192) { File.Delete(file); continue; }
                 using var document = JsonDocument.Parse(await File.ReadAllTextAsync(file, token));
                 var root = document.RootElement;
                 var eventType = root.GetProperty("eventType").GetString() ?? "";
                 var title = root.TryGetProperty("title", out var titleValue) ? titleValue.GetString() ?? "" : "";
                 var message = root.TryGetProperty("message", out var messageValue) ? messageValue.GetString() ?? "" : "";
                 var domain = root.TryGetProperty("domain", out var domainValue) ? domainValue.GetString() ?? "" : "";
-                if (eventType != "browser_navigation_blocked" || domain.Length > 253) { File.Delete(file); continue; }
+                if (eventType != "browser_navigation_blocked" ||
+                    !Regex.IsMatch(domain, @"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$") ||
+                    title.Length > 120 || message.Length > 1000) { File.Delete(file); continue; }
                 using var response = await client.PostAsJsonAsync(Endpoint(config, "api/v1/agent/events"),
                     new { eventType, title, message, domain, metadata = new { source = "managed-browser-extension" } }, token);
                 if (response.IsSuccessStatusCode) File.Delete(file);
+                else if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500 && response.StatusCode != System.Net.HttpStatusCode.TooManyRequests)
+                    File.Delete(file);
+                else return;
             }
             catch (JsonException) { File.Delete(file); }
             catch (IOException) { /* arquivo ainda pode estar sendo gravado pelo Native Host; tenta novamente no próximo ciclo */ }
