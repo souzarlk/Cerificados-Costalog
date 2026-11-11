@@ -210,6 +210,7 @@ router.post("/enrollment-tokens", requireAdminWrite, async (req, res, next) => {
   try {
     const token = newOpaqueToken(32);
     const expiresMinutes = Math.min(1440, Math.max(5, Number(req.body?.expiresMinutes) || 60));
+    await client.query("BEGIN");
     await client.query(
       "INSERT INTO enrollment_tokens(token_hash,created_by,expires_at) VALUES(?,?,TIMESTAMPADD(MINUTE, ?, NOW(3)))",
       [hashToken(token), req.admin.id, expiresMinutes]
@@ -218,9 +219,12 @@ router.post("/enrollment-tokens", requireAdminWrite, async (req, res, next) => {
       "INSERT INTO agent_events(event_type,title,message,metadata) VALUES(?,?,?,?)",
       ["admin_enrollment_token_created", "Token de instalação gerado", req.admin.email, JSON.stringify({ adminId: req.admin.id, expiresMinutes })]
     );
+    await client.query("COMMIT");
     res.status(201).json({ enrollmentToken: token, expiresInMinutes: expiresMinutes, warning: "Exibido uma única vez. Envie somente ao técnico responsável pela instalação." });
-  } catch (e) { next(e); }
-  finally { client.release(); }
+  } catch (e) {
+    try { await client.query("ROLLBACK"); } catch {}
+    next(e);
+  } finally { client.release(); }
 });
 
 export default router;
