@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-O GitHub Pages hospeda somente a interface administrativa. O navegador **não acessa o banco de dados diretamente**. A comunicação ocorre por uma API HTTPS hospedada na infraestrutura da Costalog; essa API é responsável por autenticação, regras de negócio, auditoria e persistência no banco escolhido pela empresa.
+O portal estático hospeda somente a interface administrativa e pode ser movido para o mesmo servidor da API na implantação final. O navegador **não acessa o banco de dados diretamente**. A comunicação ocorre por uma API HTTPS hospedada na infraestrutura da Costalog; essa API é responsável por autenticação, regras de negócio, auditoria e persistência no banco escolhido pela empresa.
 
-A solução é intencionalmente independente do fornecedor de banco de dados. A equipe de infraestrutura poderá escolher SQL Server, PostgreSQL, MariaDB ou outra tecnologia compatível sem alterar as telas do portal.
+O contrato REST e o portal são independentes do banco. A primeira implementação do backend usa PostgreSQL; se o servidor da empresa utilizar SQL Server, MariaDB ou outro produto, será necessário criar o adaptador/repositórios e as migrações correspondentes no backend, sem alterar as telas nem o contrato HTTP.
 
 ## Ponto único de configuração
 
@@ -44,17 +44,17 @@ A API deve ser a única camada que conhece detalhes do banco. As telas e o agent
 ## Autenticação e transporte
 
 - HTTPS obrigatório.
-- Login administrativo por provedor corporativo OIDC/OAuth 2.0 com Authorization Code + PKCE.
+- Login administrativo inicial por e-mail/senha na API, hash bcrypt e JWT de curta duração. O endpoint pode ser integrado posteriormente ao provedor corporativo OIDC/OAuth 2.0.
 - O access token deve permanecer somente em memória no navegador; não salvar bearer tokens no localStorage ou em arquivos públicos.
 - A API valida emissor, audiência, assinatura, expiração e escopos/perfis em cada chamada.
 - A API deve exigir perfil administrativo nas rotas `/admin/*`.
 - Configurar CORS somente para a origem efetivamente usada pelo portal, inicialmente `https://souzarlk.github.io`; não usar `*` com autorização.
-- Permitir apenas métodos e cabeçalhos necessários: GET, POST, DELETE, OPTIONS; Authorization e Content-Type.
+- Permitir apenas métodos e cabeçalhos necessários: GET, POST, PATCH, DELETE, OPTIONS; Authorization e Content-Type.
 - Aplicar rate limit, logs sem segredos, limite de payload e validação de hostname.
 - O endpoint `/api/v1/health` pode ser público, mas deve retornar apenas estado operacional sem detalhes de infraestrutura.
 - Não habilitar acesso remoto ao banco para os navegadores.
 
-O cliente oferece `window.CostalogAgentAPI.setAccessToken(token)` para receber o token após a futura integração OIDC. Depois de definir o token, o callback de autenticação deve disparar `window.dispatchEvent(new Event('costalog:auth-changed'))` para atualizar o painel. No logout, chamar `window.CostalogAgentAPI.clearAccessToken()`. A tela atual ainda não implementa o fluxo de login corporativo; sem token válido, o painel não lê nem grava dados administrativos na API.
+O painel já apresenta formulário de login que chama POST /auth/login; o access token é mantido apenas em memória. A API valida a sessão em /auth/me. Para migrar para SSO/OIDC, o callback corporativo poderá fornecer o token por `window.CostalogAgentAPI.setAccessToken(token)` e disparar `window.dispatchEvent(new Event('costalog:auth-changed'))`; no logout, chamar `window.CostalogAgentAPI.clearAccessToken()`.
 
 ## Contrato REST esperado
 
@@ -177,7 +177,8 @@ As credenciais do banco devem ficar em secret manager/variáveis protegidas do s
 ## Estado desta entrega
 
 Implementado no repositório:
-- configuração central do endereço da API em `agente-costalog-config.js`;\n- cliente REST isolado em `agente-costalog-api.js`;
+- configuração central do endereço da API em `agente-costalog-config.js`; 
+- cliente REST isolado em `agente-costalog-api.js`;
 - cliente REST separado da interface;
 - modo local de rascunho explicitamente identificado;
 - modo API sem fallback para dados locais em caso de falha;
