@@ -109,7 +109,7 @@ $("#siteForm").addEventListener("submit",async e=>{
  const button=$("#siteForm button[type=submit]");button.disabled=true;
  try{
   if(localMode){sites.push({id:"draft-"+Date.now(),name,host,hostname:host,createdAt:new Date().toISOString(),enabled:true});localSave();renderSites();feedback("Adicionado somente ao rascunho local.")}
-  else{if(!serverReady)throw new Error("API sem sessão administrativa. Nenhuma alteração foi gravada.");await API.createSite({name,hostname:host,enabled:true});await refreshServer();feedback("Site cadastrado no servidor da empresa.")}
+  else{if(!serverReady)throw new Error("API sem sessão administrativa. Nenhuma alteração foi gravada.");const saved=await API.createSite({name,hostname:host,enabled:true});await refreshServer();feedback("Site cadastrado e política "+(saved.policyRevision?"publicada na revisão "+saved.policyRevision:"atualizada")+". Os agentes recebem a mudança na próxima sincronização.")}
   e.target.reset();
  }catch(error){feedback(error.message,true)}
  finally{button.disabled=!localMode&&!serverReady}
@@ -128,7 +128,7 @@ $("#siteList").addEventListener("click",async e=>{
  const id=button.dataset.remove;
  try{
   if(localMode){sites=sites.filter((s,i)=>String(s.id??i)!==id);localSave();renderSites();feedback("Removido do rascunho local.")}
-  else{if(!serverReady)throw new Error("API sem sessão administrativa. Nenhuma alteração foi gravada.");await API.deleteSite(id);await refreshServer();feedback("Site removido no servidor.")}
+  else{if(!serverReady)throw new Error("API sem sessão administrativa. Nenhuma alteração foi gravada.");await API.deleteSite(id);await refreshServer();feedback("Site removido e nova política publicada. Os agentes recebem a mudança na próxima sincronização.")}
  }catch(error){feedback(error.message,true)}
 });
 $("#clearSites").addEventListener("click",()=>{if(localMode&&confirm("Apagar todos os domínios deste rascunho local?")){sites=[];localSave();renderSites();feedback("Rascunho local limpo.")}});
