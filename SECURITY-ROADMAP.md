@@ -39,10 +39,10 @@ Caso contrário: negar, registrar motivo, horário, dispositivo, usuário, certi
 - [x] Registrar as decisões e a arquitetura em branch separada.
 - [ ] Definir e disponibilizar o host HTTPS da API no servidor da empresa (o banco permanece atrás da API).
 - [x] Criar primeira interface do módulo AGENTE COSTALOG no portal (rascunho local, sem sincronização ou enforcement).\n- [x] Criar cliente REST e ponto único de configuração do endereço da API corporativa.\n- [x] Documentar contrato OpenAPI e arquitetura de persistência independente do banco.\n- [x] Separar modo local de rascunho do modo API; falhas da API não recorrem a dados locais.
-- [ ] Implementar autenticação corporativa OIDC/PKCE e validação de perfis na API.\n- [ ] Desenvolver e hospedar os endpoints da API no servidor Costalog.
-- [ ] Implementar a camada de repositórios e migrar metadados/auditoria para o banco escolhido pela empresa.
+- [x] Implementar autenticação inicial por e-mail/senha com bcrypt e JWT de curta duração; integração OIDC/SSO permanece pendente.\n- [x] Desenvolver endpoints iniciais da API corporativa; hospedagem no servidor da Costalog permanece pendente.
+- [x] Criar schema inicial e adaptador PostgreSQL de referência; conectar ao banco definitivo e adaptar se a empresa usar outro fornecedor permanece pendente.
 - [ ] Remover armazenamento de PFX/senhas do localStorage e desativar download direto para usuários comuns.
-- [ ] Criar cadastro de dispositivos e políticas de allowlist.
-- [ ] Desenvolver e assinar o agente Windows e o provedor de chave com enforcement real.
-- [ ] Integrar alertas imediatos ao TI.
+- [x] Criar cadastro de sites, dispositivos, tokens de enrollment e publicação de política assinada.
+- [x] Criar serviço Windows, assistente de instalação A/B, Native Host e extensão do navegador; provedor de chave CNG/KSP para bloqueio real do A1 permanece pendente.
+- [x] Criar integração webhook HTTPS opcional para eventos de bloqueio; endpoint corporativo de alertas precisa ser configurado.
 - [ ] Executar piloto, testes de bypass e homologação antes da distribuição geral.
