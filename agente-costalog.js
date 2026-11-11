@@ -26,8 +26,8 @@ function renderSites(){
  $("#siteCountLabel").textContent=sites.length+" "+(sites.length===1?"site":"sites");
  $("#emptySites").style.display=sites.length?"none":"block";
  $("#siteList").innerHTML=sites.map((s,i)=>{
-  const host=s.hostname||s.host||"",id=String(s.id??i),state=localMode?"RASCUNHO LOCAL":(s.enabled===false?"INATIVO":"ATIVO");
-  return '<div class="site-item"><div><b>'+esc(s.name||host)+'</b><small>'+esc(host)+'</small></div><div class="site-item-actions"><span class="site-status">'+state+'</span><button class="remove" data-remove="'+esc(id)+'" type="button">Remover</button></div></div>';
+  const host=s.hostname||s.host||"",id=String(s.id??i),enabled=s.enabled!==false,state=localMode?"RASCUNHO LOCAL":(enabled?"ATIVO":"INATIVO");
+  return '<div class="site-item"><div><b>'+esc(s.name||host)+'</b><small>'+esc(host)+'</small></div><div class="site-item-actions"><span class="site-status">'+state+'</span>'+(localMode?'':'<button class="toggle-site" data-toggle-site="'+esc(id)+'" data-next-enabled="'+(!enabled)+'" type="button">'+(enabled?'Desativar':'Ativar')+'</button>')+'<button class="remove" data-remove="'+esc(id)+'" type="button">Remover</button></div></div>';
  }).join("");
 }
 function renderDevices(){
@@ -123,10 +123,22 @@ $("#devicesContent").addEventListener("click",async e=>{
  catch(error){feedback(error.message,true);button.disabled=false}
 });
 $("#siteList").addEventListener("click",async e=>{
- const button=e.target.closest("[data-remove]");if(!button)return;
- if(!confirm("Remover este domínio da lista?"))return;
- const id=button.dataset.remove;
+ const toggle=e.target.closest("[data-toggle-site]");
+ const remove=e.target.closest("[data-remove]");
+ if(!toggle&&!remove)return;
+ const id=(toggle||remove).dataset.toggleSite||(toggle||remove).dataset.remove;
  try{
+  if(toggle){
+   const enabled=toggle.dataset.nextEnabled==="true";
+   if(!confirm(enabled?"Ativar este domínio e liberar sua utilização nos agentes?":"Desativar este domínio e removê-lo da política dos agentes?"))return;
+   if(!serverReady)throw new Error("API sem sessão administrativa. Nenhuma alteração foi gravada.");
+   toggle.disabled=true;
+   const result=await API.setSiteEnabled(id,enabled);
+   await refreshServer();
+   feedback("Domínio "+(enabled?"ativado":"desativado")+" e política publicada na revisão "+result.policyRevision+".");
+   return;
+  }
+  if(!confirm("Remover este domínio da lista?"))return;
   if(localMode){sites=sites.filter((s,i)=>String(s.id??i)!==id);localSave();renderSites();feedback("Removido do rascunho local.")}
   else{if(!serverReady)throw new Error("API sem sessão administrativa. Nenhuma alteração foi gravada.");await API.deleteSite(id);await refreshServer();feedback("Site removido e nova política publicada. Os agentes recebem a mudança na próxima sincronização.")}
  }catch(error){feedback(error.message,true)}
