@@ -4,7 +4,9 @@
   "private": true,
   "description": "API corporativa do AGENTE COSTALOG",
   "type": "module",
-  "engines": { "node": ">=20.0.0" },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
@@ -21,7 +23,7 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.13.1",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "mysql2": "^3.15.3"
   }
 }
