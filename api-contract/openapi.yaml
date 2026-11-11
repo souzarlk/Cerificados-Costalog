@@ -2,20 +2,24 @@ openapi: 3.1.0
 info:
   title: AGENTE COSTALOG API
   version: 1.0.0
-  description: API REST independente do banco de dados, hospedada na infraestrutura da Costalog.
+  description: API para portal administrativo e agente Windows, hospedada na infraestrutura da Costalog.
 servers:
   - url: https://CHANGE-ME/api/v1
-    description: Substituir pelo endereço HTTPS disponibilizado pela infraestrutura da empresa.
-security:
-  - CorporateBearer: []
+    description: Substituir pelo endereço HTTPS real da API Costalog.
+tags:
+  - name: Health
+  - name: Authentication
+  - name: Administration
+  - name: Windows Agent
 paths:
   /health:
     get:
+      tags: [Health]
       security: []
-      summary: Verifica a disponibilidade da API
+      summary: Verifica disponibilidade da API e do banco
       responses:
         "200":
-          description: API operacional
+          description: Serviço operacional
           content:
             application/json:
               schema:
@@ -23,14 +27,77 @@ paths:
                 properties:
                   status: { type: string, const: ok }
                   service: { type: string, example: agente-costalog-api }
+                  time: { type: string, format: date-time }
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-  /admin/agent/sites:
-    get:
-      summary: Lista os domínios autorizados
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      security: []
+      summary: Autentica administrador do painel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, maxLength: 254 }
+                password: { type: string, minLength: 1, maxLength: 256 }
       responses:
         "200":
-          description: Lista e revisão atual
+          description: Sessão administrativa criada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accessToken, tokenType, expiresIn, user]
+                properties:
+                  accessToken: { type: string }
+                  tokenType: { type: string, const: Bearer }
+                  expiresIn: { type: string }
+                  user:
+                    type: object
+                    properties:
+                      id: { type: string, format: uuid }
+                      email: { type: string, format: email }
+                      role: { type: string, enum: [admin, auditor] }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          description: Muitas tentativas de login
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      security:
+        - AdminBearer: []
+      summary: Retorna a identidade da sessão atual
+      responses:
+        "200":
+          description: Administrador autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  email: { type: string, format: email }
+                  role: { type: string, enum: [admin, auditor] }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /admin/agent/sites:
+    get:
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Lista hostnames cadastrados
+      responses:
+        "200":
+          description: Sites e revisão
           content:
             application/json:
               schema:
@@ -38,7 +105,11 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
     post:
-      summary: Cadastra um hostname na allowlist
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Adiciona hostname à allowlist
+      description: Requer perfil admin. Adicionar um hostname não publica automaticamente a política.
       requestBody:
         required: true
         content:
@@ -56,9 +127,13 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "409": { $ref: "#/components/responses/Conflict" }
+
   /admin/agent/sites/{siteId}:
     delete:
-      summary: Remove um domínio da allowlist
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Remove hostname da allowlist
       parameters:
         - name: siteId
           in: path
@@ -69,9 +144,13 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+
   /admin/agent/devices:
     get:
-      summary: Lista os computadores com agente instalado
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Lista computadores cadastrados
       responses:
         "200":
           description: Inventário de dispositivos
@@ -85,16 +164,51 @@ paths:
                     items: { $ref: "#/components/schemas/Device" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+
+  /admin/agent/devices/{deviceId}/status:
+    patch:
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Ativa, desativa ou revoga dispositivo
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [active, disabled, revoked] }
+      responses:
+        "200":
+          description: Estado atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /admin/agent/events:
     get:
-      summary: Lista eventos de auditoria
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Lista eventos de auditoria mais recentes
       parameters:
         - name: limit
           in: query
           schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
       responses:
         "200":
-          description: Eventos recentes
+          description: Eventos registrados
           content:
             application/json:
               schema:
@@ -105,32 +219,31 @@ paths:
                     items: { $ref: "#/components/schemas/AuditEvent" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+
   /admin/agent/policy:
     get:
-      summary: Consulta a revisão e o estado da política
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Consulta revisão atual da política administrativa
       responses:
         "200":
-          description: Política administrativa atual
+          description: Snapshot atual
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Policy"
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
+
   /admin/agent/policy/publish:
     post:
-      summary: Valida, versiona, assina e publica a política atual
-      description: A API deve validar os hostnames, registrar auditoria, incrementar revisão e entregar política assinada aos agentes autorizados.
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Publica nova revisão assinável
+      description: Requer perfil admin. Incrementa a revisão, salva snapshot deny-by-default e grava auditoria. Os agentes recebem envelopes assinados individualmente ao consultar sua rota de política.
       responses:
         "200":
-          description: Publicação realizada
+          description: Revisão publicada
           content:
             application/json:
               schema:
@@ -141,25 +254,162 @@ paths:
                   status: { type: string, const: published }
                   publishedAt: { type: string, format: date-time }
                   devicesPendingSync: { type: integer, minimum: 0 }
-        "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
-        "409": { $ref: "#/components/responses/Conflict" }
+
+  /admin/agent/enrollment-tokens:
+    post:
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Gera código de instalação de uso único
+      description: Requer perfil admin. O token é apresentado uma única vez e só seu hash é armazenado.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expiresMinutes: { type: integer, minimum: 5, maximum: 1440, default: 60 }
+      responses:
+        "201":
+          description: Código gerado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [enrollmentToken, expiresInMinutes]
+                properties:
+                  enrollmentToken: { type: string }
+                  expiresInMinutes: { type: integer }
+                  warning: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /agent/enroll:
+    post:
+      tags: [Windows Agent]
+      security: []
+      summary: Registra computador com token de instalação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enrollmentToken, deviceName, installMode]
+              properties:
+                enrollmentToken: { type: string }
+                deviceName: { type: string, maxLength: 120 }
+                windowsUsername: { type: string, maxLength: 120 }
+                osVersion: { type: string, maxLength: 120 }
+                agentVersion: { type: string, maxLength: 40 }
+                installMode: { type: string, enum: [certificate, certificate-and-web] }
+      responses:
+        "201":
+          description: Dispositivo cadastrado; token de dispositivo apresentado uma única vez
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deviceId, deviceToken, installMode]
+                properties:
+                  deviceId: { type: string, format: uuid }
+                  deviceToken: { type: string }
+                  deviceName: { type: string }
+                  installMode: { type: string }
+                  warning: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /agent/heartbeat:
+    post:
+      tags: [Windows Agent]
+      security:
+        - DeviceBearer: []
+      summary: Atualiza último contato e versão do agente
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agentVersion: { type: string, maxLength: 40 }
+      responses:
+        "200":
+          description: Heartbeat aceito
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  serverTime: { type: string, format: date-time }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /agent/policy:
+    get:
+      tags: [Windows Agent]
+      security:
+        - DeviceBearer: []
+      summary: Obtém política assinada específica do dispositivo
+      responses:
+        "200":
+          description: Envelope RSA assinado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignedPolicyEnvelope"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /agent/events:
+    post:
+      tags: [Windows Agent]
+      security:
+        - DeviceBearer: []
+      summary: Envia eventos de auditoria do dispositivo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventType]
+              properties:
+                eventType: { type: string, minLength: 2, maxLength: 80 }
+                title: { type: string, maxLength: 120 }
+                message: { type: string, maxLength: 1000 }
+                domain: { type: string, maxLength: 253 }
+                metadata: { type: object, additionalProperties: true }
+      responses:
+        "201":
+          description: Evento registrado
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
 components:
   securitySchemes:
-    CorporateBearer:
+    AdminBearer:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Access token temporário emitido pelo provedor corporativo OIDC/OAuth2.
+      description: JWT curto retornado por POST /auth/login para administradores do portal.
+    DeviceBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: Opaque
+      description: Token exclusivo por computador, gerado no enrollment, armazenado no servidor somente como hash.
   schemas:
     SiteCreate:
       type: object
-      required: [name, hostname, enabled]
       additionalProperties: false
+      required: [name, hostname, enabled]
       properties:
         name: { type: string, minLength: 1, maxLength: 70 }
-        hostname: { type: string, format: hostname, maxLength: 253 }
+        hostname: { type: string, maxLength: 253, description: Hostname DNS exato, sem protocolo, porta ou caminho }
         enabled: { type: boolean }
     Site:
       allOf:
@@ -178,7 +428,6 @@ components:
           type: array
           items: { $ref: "#/components/schemas/Site" }
         revision: { type: integer, minimum: 0 }
-        updatedAt: { type: string, format: date-time }
     Device:
       type: object
       required: [id, deviceName, status]
@@ -186,7 +435,7 @@ components:
         id: { type: string, format: uuid }
         deviceName: { type: string }
         username: { type: string }
-        status: { type: string, enum: [pending, active, disabled, revoked, offline] }
+        status: { type: string, enum: [pending, active, disabled, revoked] }
         installMode: { type: string, enum: [certificate, certificate-and-web] }
         policyRevision: { type: integer }
         lastSeenAt: { type: string, format: date-time }
@@ -204,21 +453,27 @@ components:
         createdAt: { type: string, format: date-time }
     Policy:
       type: object
-      required: [revision, status, mode, allowedDestinations]
+      required: [revision, status, mode]
       properties:
         revision: { type: integer, minimum: 0 }
         status: { type: string, enum: [draft, published] }
         mode: { type: string, const: deny-by-default }
-        defaultInstallMode: { type: string, enum: [certificate, certificate-and-web] }
         allowedDestinations:
           type: array
           items:
             type: object
-            required: [hostname, enabled]
             properties:
               hostname: { type: string }
               enabled: { type: boolean }
-        updatedAt: { type: string, format: date-time }
+    SignedPolicyEnvelope:
+      type: object
+      required: [revision, status, keyId, signedPayload, signature]
+      properties:
+        revision: { type: integer }
+        status: { type: string, const: published }
+        keyId: { type: string }
+        signedPayload: { type: string, format: byte }
+        signature: { type: string, format: byte }
   responses:
     BadRequest:
       description: Dados inválidos
@@ -226,12 +481,12 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
     Unauthorized:
-      description: Sessão ausente ou inválida
+      description: Sessão ou credencial inválida
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
     Forbidden:
-      description: Perfil administrativo necessário
+      description: Perfil sem permissão
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
@@ -241,12 +496,12 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
     Conflict:
-      description: Conflito de cadastro ou revisão
+      description: Registro duplicado ou conflito
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
     ServiceUnavailable:
-      description: API indisponível
+      description: API ou banco indisponível
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
