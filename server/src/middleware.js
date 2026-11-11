@@ -20,6 +20,7 @@ export function requireAdminWrite(req, res, next) {
   next();
 }
 export function errorHandler(err, req, res, next) {
+  if (err && err.name === "ZodError") return res.status(400).json({ error: "validation_error", message: "Os dados enviados são inválidos.", issues: err.issues });
   console.error("API error", { method: req.method, path: req.path, message: err.message });
   if (res.headersSent) return next(err);
   res.status(err.status || 500).json({
