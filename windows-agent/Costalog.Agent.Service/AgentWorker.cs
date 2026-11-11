@@ -32,7 +32,7 @@ public sealed class AgentWorker : BackgroundService
                     await EnrollAsync(config, stoppingToken);
                 config = AgentConfigStore.Load();
                 await HeartbeatAsync(config, stoppingToken);
-                await SyncPolicyAsync(config, stoppingToken);
+                await SyncPolicyAsync(config, stoppingToken);\n                await FlushPendingEventsAsync(config, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -164,6 +164,35 @@ public sealed class AgentWorker : BackgroundService
         }
     }
 
+
+    private async Task FlushPendingEventsAsync(AgentConfig config, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(config.DeviceTokenProtected)) return;
+        var queue = Path.Combine(AgentConfigStore.Root, "pending-events");
+        if (!Directory.Exists(queue)) return;
+        var client = Client(config, true);
+        foreach (var file in Directory.EnumerateFiles(queue, "*.json").Take(100))
+        {
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                using var document = JsonDocument.Parse(await File.ReadAllTextAsync(file, token));
+                var root = document.RootElement;
+                var eventType = root.GetProperty("eventType").GetString() ?? "";
+                var title = root.TryGetProperty("title", out var titleValue) ? titleValue.GetString() ?? "" : "";
+                var message = root.TryGetProperty("message", out var messageValue) ? messageValue.GetString() ?? "" : "";
+                var domain = root.TryGetProperty("domain", out var domainValue) ? domainValue.GetString() ?? "" : "";
+                if (eventType != "browser_navigation_blocked" || domain.Length > 253) { File.Delete(file); continue; }
+                using var response = await client.PostAsJsonAsync(Endpoint(config, "api/v1/agent/events"),
+                    new { eventType, title, message, domain, metadata = new { source = "managed-browser-extension" } }, token);
+                if (response.IsSuccessStatusCode) File.Delete(file);
+            }
+            catch (JsonException) { File.Delete(file); }
+            catch (IOException) { /* arquivo ainda pode estar sendo gravado pelo Native Host; tenta novamente no próximo ciclo */ }
+            catch (HttpRequestException) { return; }
+        }
+    }
+
     private async Task ReportFailureAsync(Exception error, CancellationToken token)
     {
         if (DateTimeOffset.UtcNow - _lastFailureEvent < TimeSpan.FromMinutes(10)) return;
@@ -172,7 +201,7 @@ public sealed class AgentWorker : BackgroundService
         {
             var config = AgentConfigStore.Load();
             if (string.IsNullOrWhiteSpace(config.DeviceTokenProtected)) return;
-            using var client = Client(config, true);
+            var client = Client(config, true);
             using var response = await client.PostAsJsonAsync(Endpoint(config, "api/v1/agent/events"), new
             {
                 eventType = "agent_sync_failed",
