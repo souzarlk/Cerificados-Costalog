@@ -42,3 +42,8 @@ body.auth-required>.top,body.auth-required>.wrap{visibility:hidden;pointer-event
 
 .toggle-site{border:1px solid #ddd;background:#fff;color:#444;border-radius:8px;padding:7px 10px;cursor:pointer;font-weight:700;white-space:nowrap}
 .toggle-site:hover{border-color:var(--red);color:var(--red)}
+
+.policy-status{display:inline-flex;align-items:center;border-radius:30px;padding:6px 9px;font-size:9px;font-weight:850;letter-spacing:.04em;white-space:nowrap}
+.policy-status.synced{color:#16834b;background:#eaf8f0}
+.policy-status.pending{color:#986400;background:#fff4df}
+.policy-status.no-policy{color:#777;background:#f0f0f2}
