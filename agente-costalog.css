@@ -34,3 +34,8 @@ body.auth-required>.top,body.auth-required>.wrap{visibility:hidden;pointer-event
 .enrollment-result code{padding:12px;background:#fff;border:1px dashed #a6cbb1;border-radius:8px;word-break:break-all;color:#183b25;font-size:13px}
 .enrollment-result .secondary{justify-self:start}
 @media(max-width:650px){.auth-card{padding:24px}.top-tools{gap:5px}.logout-mini{font-size:11px;padding:7px}}
+
+.device-row-actions{display:flex;align-items:center;gap:10px}
+.device-row-actions .remove{white-space:nowrap}
+.pill.success{background:#eaf8f0;color:#16834b}
+@media(max-width:600px){.device-row-actions{width:100%;justify-content:space-between}}
