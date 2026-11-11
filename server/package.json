@@ -13,8 +13,9 @@
     "db:migrate": "node scripts/migrate.js",
     "admin:create": "node scripts/create-admin.js",
     "keys:generate": "node scripts/generate-policy-keys.js",
-    "check": "node --check src/server.js && node --check src/routes/auth.js && node --check src/routes/admin.js && node --check src/routes/agent.js && node --check scripts/smoke-mariadb.js",
-    "db:smoke": "node scripts/smoke-mariadb.js"
+    "check": "node --check src/server.js && node --check src/routes/auth.js && node --check src/routes/admin.js && node --check src/routes/agent.js && node --check scripts/smoke-mariadb.js && node --check src/security.js",
+    "db:smoke": "node scripts/smoke-mariadb.js",
+    "test": "node --test"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
