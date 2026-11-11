@@ -5,11 +5,11 @@ API para hospedar no servidor da Costalog. O portal web e o agente Windows conso
 ## Requisitos
 
 - Node.js 20 ou superior (recomendado Node.js 22 LTS).
-- PostgreSQL 14 ou superior nesta primeira implementação.
+- MariaDB 10.6 ou superior (CI validado com MariaDB 11.4).
 - HTTPS via proxy reverso (IIS, Nginx ou infraestrutura corporativa).
 - Uma origem web autorizada configurada em `ALLOWED_ORIGINS`.
 
-A API é a única camada que acessa o banco. Nesta primeira versão foi implementado PostgreSQL em `src/db.js` e as consultas/migrações usam SQL compatível com PostgreSQL. Se a infraestrutura decidir utilizar SQL Server, MariaDB ou outro banco, o backend precisará receber o driver, repositórios/consultas e migrações específicos; o contrato REST e as telas não precisam mudar. O banco nunca deve ficar exposto à internet.
+A API é a única camada que acessa o banco. Nesta versão, o banco oficial de referência é MariaDB, usando `mysql2` em `src/db.js` e tabelas InnoDB/utf8mb4. O contrato REST e as telas permanecem isolados do SQL. O banco nunca deve ficar exposto à internet.
 
 Para implantação em Windows Server, consulte `WINDOWS-SERVER-DEPLOYMENT.md`.
 
@@ -18,23 +18,23 @@ Para implantação em Windows Server, consulte `WINDOWS-SERVER-DEPLOYMENT.md`.
 ### Opção recomendada: Docker Compose
 
 1. Copie a pasta `server/` para o servidor da empresa.
-2. Na pasta `server/`, copie `.env.example` para `.env` e substitua todos os valores `CHANGE_ME`/`REPLACE_*` por segredos aleatórios guardados pela TI.
-3. Confirme que `POSTGRES_PASSWORD` e a senha embutida em `DATABASE_URL` são iguais; para senhas com caracteres especiais, codifique-os para URL.
+2. Na pasta `server/`, copie `.env.example` para `.env` e substitua todos os valores `CHANGE_ME`/`REPLACE_*` por segredos aleatórios guardados pela TI. Configure `DB_PASSWORD` e `MARIADB_ROOT_PASSWORD` com senhas diferentes.
+3. A senha `DB_PASSWORD` será usada pelo usuário restrito da aplicação; `MARIADB_ROOT_PASSWORD` será usada somente para administração do container.
 4. Execute `docker compose up -d db` e aguarde o Postgres ficar saudável.
 5. Execute `docker compose build api`.
 6. Execute `docker compose run --rm api npm run db:migrate`.
-7. Execute `docker compose run --rm api npm run admin:create` para criar o primeiro administrador. Defina uma senha forte com pelo menos 14 caracteres.
+7. Execute `docker compose run --rm api npm run admin:create` para criar o primeiro administrador. Defina `BOOTSTRAP_ADMIN_EMAIL` real e uma senha forte com pelo menos 14 caracteres no `.env`.
 8. Execute `docker compose up -d api`.
 9. Configure IIS/Nginx/proxy corporativo para encaminhar HTTPS para `127.0.0.1:8080`; não exponha a porta 8080 nem a porta do PostgreSQL à internet.
 
 ### Execução direta com Node.js
 
 1. Copie a pasta `server/` para o servidor da empresa.
-2. Crie um banco e usuário exclusivos para o AGENTE COSTALOG, com permissões mínimas.
+2. Crie um banco MariaDB e um usuário exclusivo para o AGENTE COSTALOG, com permissões mínimas.
 3. Copie `.env.example` para `.env` e preencha os valores reais fora do Git.
-4. Configure `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS` e as chaves de assinatura.
+4. Configure `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `ALLOWED_ORIGINS` e as chaves de assinatura.
 5. Instale dependências com `npm install` (o arquivo de lock será gerado no servidor).
-6. Execute `npm run db:migrate`. Em Docker Compose, a API usa o hostname `db` na rede interna do Compose; fora do Docker, ajuste `DATABASE_URL` para o endereço privado do PostgreSQL da empresa.
+6. Execute `npm run db:migrate`. Em Docker Compose, a API usa o hostname `mariadb` na rede interna; fora do Docker, `DB_HOST` deve apontar para o endereço privado do MariaDB da empresa.
 7. Execute `npm run admin:create` para criar o primeiro administrador. Use senha forte e não a reutilize.
 8. Inicie com `npm start` e coloque um proxy HTTPS corporativo na frente.
 9. Restrinja a porta do banco à rede/host da API. O banco não deve ser publicado.
@@ -45,11 +45,12 @@ Execute `npm run keys:generate` em ambiente seguro. Guarde `POLICY_SIGNING_PRIVA
 
 ## Variáveis obrigatórias
 
-- `DATABASE_URL`: string de conexão PostgreSQL no servidor.
+- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`: conexão MariaDB privada.
 - `JWT_SECRET`: segredo aleatório com no mínimo 32 caracteres.
 - `POLICY_SIGNING_PRIVATE_KEY_B64`: chave RSA privada em PEM codificada em Base64.
 - `POLICY_SIGNING_KEY_ID`: identificador público da chave.
 - `ALLOWED_ORIGINS`: origens exatas do portal.
+- `DB_SSL=true`: habilita TLS validado para conexão com MariaDB quando suportado pelo servidor.
 - `TRUST_PROXY=true`: somente quando a API estiver atrás de proxy reverso confiável e a porta da API estiver restrita a loopback/rede privada.
 
 ## Autenticação
