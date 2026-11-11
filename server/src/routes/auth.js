@@ -16,12 +16,12 @@ const loginSchema = z.object({
 router.post("/login", loginLimiter, async (req, res, next) => {
   try {
     const input = loginSchema.parse(req.body);
-    const result = await query("SELECT id,email,role,active,password_hash FROM admin_users WHERE email=$1", [input.email.trim().toLowerCase()]);
+    const result = await query("SELECT id,email,role,active,password_hash FROM admin_users WHERE email=?", [input.email.trim().toLowerCase()]);
     const admin = result.rows[0];
     const valid = admin && admin.active && await bcrypt.compare(input.password, admin.password_hash);
     if (!valid) return res.status(401).json({ error: "invalid_credentials", message: "E-mail ou senha incorretos." });
     const accessToken = signAdminToken(admin);
-    await query("UPDATE admin_users SET updated_at=NOW() WHERE id=$1", [admin.id]);
+    await query("UPDATE admin_users SET updated_at=NOW() WHERE id=?", [admin.id]);
     res.set("Cache-Control", "no-store");
     res.json({ accessToken, tokenType: "Bearer", expiresIn: process.env.JWT_EXPIRES_IN || "15m", user: { id: admin.id, email: admin.email, role: admin.role } });
   } catch (error) { next(error); }
