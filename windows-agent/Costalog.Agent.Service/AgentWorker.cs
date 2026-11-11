@@ -173,7 +173,7 @@ public sealed class AgentWorker : BackgroundService
     private async Task FlushPendingEventsAsync(AgentConfig config, CancellationToken token)
     {
         if (string.IsNullOrWhiteSpace(config.DeviceTokenProtected)) return;
-        var queue = Path.Combine(AgentConfigStore.Root, "pending-events");
+        var queue = AgentConfigStore.PendingEventsRoot;
         if (!Directory.Exists(queue)) return;
         var client = Client(config, true);
         foreach (var file in Directory.EnumerateFiles(queue, "*.json").Take(100))
