@@ -5,7 +5,12 @@
 (function (global) {
   "use strict";
   const config = global.COSTALOG_AGENT_CONFIG || {};
-  let accessToken = null;
+  const AUTH_STORAGE_KEY = "costalog_admin_token";
+  function readStoredToken() {
+    try { return global.sessionStorage.getItem(AUTH_STORAGE_KEY) || null; }
+    catch { return null; }
+  }
+  let accessToken = readStoredToken();
 
   function baseUrl() {
     return String(config.apiBaseUrl || "").trim().replace(/\/+$/, "");
@@ -22,8 +27,15 @@
   function hasAccessToken() { return Boolean(accessToken); }
   function setAccessToken(token) {
     accessToken = typeof token === "string" && token.trim() ? token.trim() : null;
+    try {
+      if (accessToken) global.sessionStorage.setItem(AUTH_STORAGE_KEY, accessToken);
+      else global.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch {}
   }
-  function clearAccessToken() { accessToken = null; }
+  function clearAccessToken() {
+    accessToken = null;
+    try { global.sessionStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
+  }
 
   async function fetchJson(url, options, timeoutMessage, connectionMessage) {
     const timeout = Math.max(1000, Number(config.requestTimeoutMs) || 12000);
@@ -50,6 +62,27 @@
       catch { throw new Error("O servidor retornou uma resposta inválida."); }
     }
     return { response, data };
+  }
+
+  async function resumeIdentitySession() {
+    if (!accessToken) return false;
+    const base = identityBaseUrl();
+    if (!base) {
+      clearAccessToken();
+      return false;
+    }
+    const verified = await fetchJson(
+      base + String(config.identityMePath || "/api/auth/me"),
+      { method: "GET", headers: { "Accept": "application/json", "Authorization": "Bearer " + accessToken } },
+      "Tempo limite ao confirmar a sessão da Central de Notas Fiscais.",
+      "Não foi possível confirmar a sessão da Central de Notas Fiscais."
+    );
+    if (verified.response.status === 401 || verified.response.status === 403 ||
+        !verified.response.ok || !verified.data || verified.data.authenticated !== true) {
+      clearAccessToken();
+      return false;
+    }
+    return true;
   }
 
   async function identityLogin(username, password) {
@@ -119,6 +152,7 @@
     setAccessToken,
     clearAccessToken,
     login: identityLogin,
+    resumeIdentitySession,
     me: () => request("/auth/me"),
     createEnrollmentToken: expiresMinutes => request("/admin/agent/enrollment-tokens", { method: "POST", body: { expiresMinutes: expiresMinutes || 60 } }),
     health: () => request("/health"),
