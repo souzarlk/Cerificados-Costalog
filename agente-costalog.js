@@ -36,7 +36,7 @@ function renderDevices(){
  if(!serverReady){box.className="placeholder";box.innerHTML="<span>▣</span><b>Aguardando autenticação</b><p>O inventário é carregado diretamente da API do servidor Costalog.</p>";return}
  if(!devices.length){box.className="placeholder";box.innerHTML="<span>▣</span><b>Nenhum dispositivo registrado</b><p>Gere um código de instalação para cadastrar o primeiro computador.</p>";return}
  box.className="data-list";
- box.innerHTML=devices.map(d=>'<article class="data-row"><div><b>'+esc(d.deviceName||d.hostname||d.name||"Computador")+'</b><small>'+esc(d.username||"Usuário não informado")+' · '+esc(d.lastSeenAt?new Date(d.lastSeenAt).toLocaleString("pt-BR"):"Sem sincronização")+'</small></div><span class="site-status">'+esc(d.status||"REGISTRADO")+'</span></article>').join("");
+ box.innerHTML=devices.map(d=>{const next=d.status==="active"?"revoked":"active";const label=next==="revoked"?"Revogar":"Reativar";return '<article class="data-row"><div><b>'+esc(d.deviceName||d.hostname||d.name||"Computador")+'</b><small>'+esc(d.username||"Usuário não informado")+' · '+esc(d.lastSeenAt?new Date(d.lastSeenAt).toLocaleString("pt-BR"):"Sem sincronização")+'</small></div><div class="device-row-actions"><span class="site-status">'+esc(d.status||"REGISTRADO")+'</span><button class="remove" data-device-id="'+esc(d.id)+'" data-next-status="'+next+'" type="button">'+label+'</button></div></article>'}).join("");
 }
 function renderEvents(){
  $("#eventCount").textContent=serverReady?String(events.length):"—";
@@ -113,6 +113,14 @@ $("#siteForm").addEventListener("submit",async e=>{
   e.target.reset();
  }catch(error){feedback(error.message,true)}
  finally{button.disabled=!localMode&&!serverReady}
+});
+$("#devicesContent").addEventListener("click",async e=>{
+ const button=e.target.closest("[data-device-id]");if(!button||!serverReady)return;
+ const id=button.dataset.deviceId,nextStatus=button.dataset.nextStatus;
+ if(!confirm(nextStatus==="revoked"?"Revogar este computador? O agente perderá acesso à API.":"Reativar este computador?"))return;
+ button.disabled=true;
+ try{await API.setDeviceStatus(id,nextStatus);await refreshServer();feedback("Estado do dispositivo atualizado: "+nextStatus+".")}
+ catch(error){feedback(error.message,true);button.disabled=false}
 });
 $("#siteList").addEventListener("click",async e=>{
  const button=e.target.closest("[data-remove]");if(!button)return;
