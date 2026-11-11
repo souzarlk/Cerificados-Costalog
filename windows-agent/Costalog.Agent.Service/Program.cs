@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddWindowsService(options =>
 {
-    options.ServiceName = "AGENTE COSTALOG";
+    options.ServiceName = "CostalogAgent";
 });
 builder.Services.AddSingleton(new HttpClient { Timeout = TimeSpan.FromSeconds(20) });
 builder.Services.AddSingleton<AgentWorker>();
