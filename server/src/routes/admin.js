@@ -79,6 +79,9 @@ router.get("/policy", async (req, res, next) => {
 router.post("/policy/publish", requireAdminWrite, async (req, res, next) => {
   const client = await pool.connect();
   try {
+    // Serialize policy revisions so concurrent publish requests cannot reuse the same number.
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(7042026)");
     // Do not publish a policy unless the signing key is configured and usable.
     const enabledSites = await client.query("SELECT hostname FROM agent_sites WHERE enabled=TRUE ORDER BY hostname");
     const revisionResult = await client.query("SELECT COALESCE(MAX(revision),0)::int AS revision FROM agent_policies");
@@ -92,7 +95,6 @@ router.post("/policy/publish", requireAdminWrite, async (req, res, next) => {
       allowedDestinations:enabledSites.rows.map(row=>({hostname:row.hostname,enabled:true}))
     };
     signPolicy(payload); // validates key configuration before committing
-    await client.query("BEGIN");
     await client.query("INSERT INTO agent_policies(revision,status,payload,published_by,published_at) VALUES($1,'published',$2::jsonb,$3,NOW())",
       [revision,JSON.stringify(payload),req.admin.id]);
     await client.query("INSERT INTO agent_events(event_type,title,message,metadata) VALUES($1,$2,$3,$4::jsonb)",
