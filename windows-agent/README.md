@@ -34,7 +34,8 @@ A chave privada nunca deve entrar no pacote Windows ou no Git.
 - Serviço Windows com inicialização automática.
 - Cadastro do computador mediante token de uso único.
 - Token exclusivo por dispositivo, armazenado localmente com DPAPI LocalMachine.
-- ACL no arquivo de configuração e na pasta do agente.
+- Segredos em `ProgramData\Costalog\Agent\Private`, protegidos por ACL para SYSTEM, Administradores e serviço.
+- Estado público da política em `Public`, somente leitura para usuários; fila de eventos em pasta separada com permissões de gravação necessárias para o Native Host.
 - Heartbeat, sincronização e verificação de assinatura RSA.
 - Expiração da política e bloqueio preventivo de navegação na Opção B quando o estado local estiver ausente, inválido ou expirado.
 - Eventos de falha de sincronização enviados à API, com limitação de repetição.
