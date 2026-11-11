@@ -64,7 +64,10 @@ catch (Exception error)
 }
 
 var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Costalog", "Agent");
-Directory.CreateDirectory(root);
+var privateRoot = Path.Combine(root, "Private");
+var publicRoot = Path.Combine(root, "Public");
+Directory.CreateDirectory(privateRoot);
+Directory.CreateDirectory(publicRoot);
 var protectedToken = Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(enrollmentToken), null, DataProtectionScope.LocalMachine));
 var config = new
 {
@@ -77,7 +80,7 @@ var config = new
     agentVersion = "1.0.0"
 };
 var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
-var configPath = Path.Combine(root, "agent.json");
+var configPath = Path.Combine(privateRoot, "agent.json");
 var tempPath = configPath + ".tmp";
 await File.WriteAllTextAsync(tempPath, JsonSerializer.Serialize(config, jsonOptions), new UTF8Encoding(false));
 File.Move(tempPath, configPath, true);
@@ -91,7 +94,7 @@ var publicState = new
     allowedDestinations = Array.Empty<string>(),
     updatedAt = DateTimeOffset.UtcNow.ToString("O")
 };
-await File.WriteAllTextAsync(Path.Combine(root, "agent-public-state.json"), JsonSerializer.Serialize(publicState, jsonOptions), new UTF8Encoding(false));
+await File.WriteAllTextAsync(Path.Combine(publicRoot, "agent-public-state.json"), JsonSerializer.Serialize(publicState, jsonOptions), new UTF8Encoding(false));
 
 Console.WriteLine();
 Console.WriteLine("Configuração salva em ProgramData\\Costalog\\Agent.");
