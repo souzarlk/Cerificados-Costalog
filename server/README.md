@@ -68,7 +68,7 @@ O cadastro de dispositivos usa token de enrollment de uso único, criado em `POS
 Veja `../api-contract/openapi.yaml` para o contrato completo.
 
 - `GET /api/v1/health`
-- `POST /api/v1/auth/login`, `GET /api/v1/auth/me`
+- `GET /api/v1/auth/me` (Bearer emitido pela Central de Notas Fiscais; login em `/api/auth/login` da Central)
 - `GET/POST /api/v1/admin/agent/sites`
 - `PATCH/DELETE /api/v1/admin/agent/sites/{siteId}`
 - `GET /api/v1/admin/agent/devices`
