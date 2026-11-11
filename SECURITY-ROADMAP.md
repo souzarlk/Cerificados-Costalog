@@ -14,7 +14,7 @@ A versão publicada é um front-end estático. O código atual mantém dados no 
 ## Arquitetura-alvo
 1. **Portal administrativo:** cadastro e gestão de certificados, dispositivos, usuários, domínios autorizados, políticas e eventos.
 2. **API autenticada no servidor Costalog:** única autoridade para políticas, permissões e auditoria. O portal conversa com ela por HTTPS; o navegador não será fonte de verdade para papéis ou permissões.
-3. **Banco de dados no servidor da empresa:** tecnologia independente do portal. A API acessa o banco por uma camada de repositórios; a tecnologia (por exemplo, SQL Server ou PostgreSQL) será definida pela infraestrutura. Nunca armazenar senha de PFX em texto puro.
+3. **Banco de dados no servidor da empresa:** a implementação de referência usa PostgreSQL. Se a infraestrutura escolher outro fornecedor, adaptar driver, repositórios/consultas e migrações no backend; portal e contrato REST permanecem estáveis. Nunca armazenar senha de PFX em texto puro.
 4. **Windows Agent:** serviço instalado e gerenciado nos computadores; identifica o dispositivo, recebe políticas assinadas e registra eventos.
 5. **Chave privada:** permanece no Windows sob controle de um provedor criptográfico/serviço de assinatura com autorização. ACLs e políticas do navegador, isoladamente, não garantem bloqueio por domínio.
 6. **Chrome e Edge:** aplicar políticas corporativas como camada complementar; não considerar seleção automática de certificado como mecanismo de bloqueio absoluto.
@@ -38,7 +38,7 @@ Caso contrário: negar, registrar motivo, horário, dispositivo, usuário, certi
 ## Etapas de implementação
 - [x] Registrar as decisões e a arquitetura em branch separada.
 - [ ] Definir e disponibilizar o host HTTPS da API no servidor da empresa (o banco permanece atrás da API).
-- [x] Criar primeira interface do módulo AGENTE COSTALOG no portal (rascunho local, sem sincronização ou enforcement).
+- [x] Criar painel AGENTE COSTALOG integrado à API, com rascunho local somente para desenvolvimento.
 - [x] Criar cliente REST e ponto único de configuração do endereço da API corporativa.
 - [x] Documentar contrato OpenAPI e arquitetura de persistência independente do banco.
 - [x] Separar modo local de rascunho do modo API; falhas da API não recorrem a dados locais.
@@ -47,6 +47,7 @@ Caso contrário: negar, registrar motivo, horário, dispositivo, usuário, certi
 - [x] Criar schema inicial e adaptador PostgreSQL de referência; conectar ao banco definitivo e adaptar se a empresa usar outro fornecedor permanece pendente.
 - [ ] Remover armazenamento de PFX/senhas do localStorage e desativar download direto para usuários comuns.
 - [x] Criar cadastro de sites, dispositivos, tokens de enrollment e publicação de política assinada.
-- [x] Criar serviço Windows, assistente de instalação A/B, Native Host e extensão do navegador; provedor de chave CNG/KSP para bloqueio real do A1 permanece pendente.
+- [x] Criar serviço Windows de sincronização, assistente A/B, Native Messaging Host e extensão Chrome/Edge para bloqueio de navegação principal na Opção B.
+- [ ] Implementar e homologar provedor criptográfico CNG/KSP para impedir o uso da chave privada A1 fora dos destinos autorizados na Opção A.
 - [x] Criar integração webhook HTTPS opcional para eventos de bloqueio; endpoint corporativo de alertas precisa ser configurado.
 - [ ] Executar piloto, testes de bypass e homologação antes da distribuição geral.
