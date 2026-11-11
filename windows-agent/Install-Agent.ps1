@@ -84,7 +84,7 @@ if ($config.installMode -eq "certificate-and-web") {
     type = "stdio"
     allowed_origins = @("chrome-extension://$extensionId/")
   }
-  $nativeManifest | ConvertTo-Json -Depth 5 | Set-Content -Path $manifestPath -Encoding UTF8
+  [System.IO.File]::WriteAllText($manifestPath, ($nativeManifest | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))
   foreach ($registryPath in @(
     "HKLM:\SOFTWARE\Google\Chrome\NativeMessagingHosts\com.costalog.agent",
     "HKLM:\SOFTWARE\Microsoft\Edge\NativeMessagingHosts\com.costalog.agent"
