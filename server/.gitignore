@@ -4,3 +4,6 @@ node_modules/
 secrets/
 policy-private.pem
 policy-private-key*
+
+dist/
+secrets/
