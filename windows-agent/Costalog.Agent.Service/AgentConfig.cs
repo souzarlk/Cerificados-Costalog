@@ -11,6 +11,7 @@ public sealed class AgentConfig
     public string? EnrollmentTokenProtected { get; set; }
     public string? DeviceTokenProtected { get; set; }
     public string? DeviceId { get; set; }
+    public int LastPolicyRevision { get; set; }
     public string PolicyPublicKeyPem { get; set; } = "";
     public string AgentVersion { get; set; } = "1.0.0";
 }
