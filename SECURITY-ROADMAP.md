@@ -38,6 +38,7 @@ Caso contrário: negar, registrar motivo, horário, dispositivo, usuário, certi
 ## Etapas de implementação
 - [x] Registrar as decisões e a arquitetura em branch separada.
 - [ ] Definir backend e ambiente de hospedagem.
+- [x] Criar primeira interface do módulo AGENTE COSTALOG no portal (rascunho local, sem sincronização ou enforcement).
 - [ ] Implementar autenticação real, papéis e API.
 - [ ] Migrar metadados e auditoria para banco de dados.
 - [ ] Remover armazenamento de PFX/senhas do localStorage e desativar download direto para usuários comuns.
