@@ -27,7 +27,7 @@ A chave privada nunca deve entrar no pacote Windows ou no Git.
 1. No painel AGENTE COSTALOG, gere um código de instalação de uso único.
 2. Execute Install-Agent.ps1 como administrador no computador Windows.
 3. Informe o endereço HTTPS da API, selecione Opção A ou B, cole o código e confirme a chave pública.
-4. O serviço será cadastrado automaticamente na API e passará a enviar heartbeat e buscar políticas a cada 45 segundos.
+4. O serviço será cadastrado automaticamente na API e passará a enviar heartbeat e buscar políticas a cada 45 segundos; o heartbeat também confirma a última revisão cuja assinatura foi validada localmente.
 
 ## O que já faz
 
@@ -49,10 +49,8 @@ A chave privada nunca deve entrar no pacote Windows ou no Git.
 
 1. Em uma estação Windows com Google Chrome, execute `Package-Extension.ps1`. O script gera o CRX, o ID da extensão e o updates.xml.
 2. Guarde a chave extension-signing.pem em cofre institucional. Ela não pode ser publicada no servidor web nem commitada no Git.
-3. Empacotar a extensão browser-extension como CRX com uma chave da TI.
-- Hospedar CRX e updates.xml em HTTPS no servidor da empresa.
-- Atualizar o appid e URL no updates.xml.
-- Durante a instalação, informar ID da extensão e URL updates.xml. O script registra o Native Messaging Host e políticas de instalação forçada no Chrome e Edge.
+3. Hospede somente `agente-costalog.crx` e `updates.xml` em HTTPS no servidor da empresa; nunca publique `extension-signing.pem`.
+4. Durante a instalação, informe o ID da extensão e a URL HTTPS do `updates.xml`. O script registra o Native Messaging Host e as políticas de instalação forçada no Chrome e Edge.
 
 ## Remoção
 
