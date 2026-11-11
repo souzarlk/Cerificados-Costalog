@@ -20,7 +20,7 @@ const allowedOrigins=String(process.env.ALLOWED_ORIGINS||"").split(",").map(v=>v
 app.use(cors({
   origin(origin,callback){
     if(!origin||allowedOrigins.includes(origin))return callback(null,true);
-    return callback(new Error("Origem não autorizada pelo CORS."));
+    const error = new Error("Origem não autorizada pelo CORS."); error.status = 403; return callback(error);
   },
   methods:["GET","POST","DELETE","OPTIONS"],
   allowedHeaders:["Authorization","Content-Type","X-Request-Id"],
