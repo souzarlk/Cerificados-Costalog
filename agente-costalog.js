@@ -67,6 +67,7 @@ function showGate(message){
  $("#authGate").hidden=false;
  $("#agentLogout").hidden=true;
  $("#agentLoginFeedback").textContent=message||"";
+ setTimeout(()=>$("#agentUsername")?.focus(),50);
 }
 function hideGate(){
  document.body.classList.remove("auth-required");
@@ -186,25 +187,46 @@ document.querySelectorAll(".tab").forEach(button=>button.addEventListener("click
  document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("active",x.id==="panel-"+button.dataset.tab));
 }));
 $("#agentLoginForm").addEventListener("submit",async e=>{
- e.preventDefault();const button=e.currentTarget.querySelector('button[type="submit"]'),message=$("#agentLoginFeedback");
- button.disabled=true;message.textContent="Autenticando no servidor Costalog…";
+ e.preventDefault();
+ const button=$("#agentLoginSubmit"),message=$("#agentLoginFeedback");
+ const username=$("#agentUsername").value.trim(),password=$("#agentPassword").value;
+ button.disabled=true;
+ button.textContent="Validando acesso...";
+ message.textContent="";
  try{
-  await API.login($("#agentEmail").value.trim(),$("#agentPassword").value);
-  await API.me();$("#agentPassword").value="";
-  await refreshServer();
- }catch(error){API.clearAccessToken();message.textContent=error.message}
- finally{button.disabled=false}
+  await API.login(username,password);
+  $("#agentPassword").value="";
+  if(serverMode){
+   await refreshServer();
+   if(!serverReady)throw new Error("Seu login foi reconhecido, mas a API corporativa do AGENTE COSTALOG ainda não concluiu a conexão. Consulte a TI.");
+  }else{
+   await refreshLocal();
+   hideGate();
+   status("LOGIN CENTRAL VALIDADO · MODO RASCUNHO","warning");
+   notice("<b>Login validado pela Central de Notas Fiscais:</b> este é o mesmo usuário e senha. O servidor do AGENTE COSTALOG ainda não foi conectado; por enquanto, alterações ficam somente neste navegador e não ativam proteção nos computadores.","warning");
+  }
+ }catch(error){
+  API.clearAccessToken();
+  message.textContent=error.message||"Não foi possível entrar. Verifique seu usuário e senha.";
+  showGate();
+  message.textContent=error.message||"Não foi possível entrar. Verifique seu usuário e senha.";
+ }finally{
+  button.disabled=false;
+  button.innerHTML='Acessar plataforma <span aria-hidden="true">→</span>';
+ }
 });
 $("#agentLogout").addEventListener("click",()=>{
  API.clearAccessToken();serverReady=false;sites=[];devices=[];events=[];editable(false);
  showGate("Sessão encerrada. Entre novamente.");status("SESSÃO ENCERRADA","warning");
  renderSites();renderDevices();renderEvents();renderPolicy(null);
 });
-if(serverMode){showGate("Entre com a conta administrativa cadastrada no servidor Costalog.");refreshServer()}
-else{
- if(sessionStorage.getItem("costalog_role")!=="admin"){
-  document.body.innerHTML='<main style="font:16px Arial;padding:50px;text-align:center"><h2>Acesso administrativo necessário</h2><p>Entre como administrador na Central de Certificados para abrir o AGENTE COSTALOG.</p><a href="index.html">Voltar ao portal</a></main>';return;
- }
- refreshLocal();
+showGate("");
+if(serverMode){
+ refreshServer();
+}else{
+ status("AGUARDANDO LOGIN CENTRAL","warning");
+ notice("<b>Login unificado:</b> entre com o mesmo usuário e senha da Central de Notas Fiscais Costalog.","warning");
+ editable(false);
+ renderSites();renderDevices();renderEvents();renderPolicy(null);
 }
 })();
