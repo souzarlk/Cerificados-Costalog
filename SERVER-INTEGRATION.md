@@ -68,9 +68,15 @@ Prefixo padrão: `/api/v1`. Todos os corpos e respostas são JSON.
 | PATCH | `/admin/agent/sites/{siteId}` | Ativar/desativar domínio e publicar nova política automaticamente |
 | DELETE | `/admin/agent/sites/{siteId}` | Remover domínio e publicar nova política automaticamente |
 | GET | `/admin/agent/devices` | Listar instalações do agente |
+| PATCH | `/admin/agent/devices/{deviceId}/status` | Ativar, desativar ou revogar instalação |
+| POST | `/admin/agent/enrollment-tokens` | Gerar código de instalação de uso único |
 | GET | `/admin/agent/events?limit=50` | Consultar auditoria |
 | GET | `/admin/agent/policy` | Consultar revisão e estado da política |
 | POST | `/admin/agent/policy/publish` | Validar, versionar, assinar e publicar a política |
+| POST | `/agent/enroll` | Registrar computador com código de uso único |
+| POST | `/agent/heartbeat` | Atualizar último contato |
+| GET | `/agent/policy` | Buscar política assinada por dispositivo |
+| POST | `/agent/events` | Enviar eventos de auditoria |
 
 ### Exemplos de dados
 
@@ -178,9 +184,8 @@ As credenciais do banco devem ficar em secret manager/variáveis protegidas do s
 ## Estado desta entrega
 
 Implementado no repositório:
-- configuração central do endereço da API em `agente-costalog-config.js`; 
+- configuração central do endereço da API em `agente-costalog-config.js`;
 - cliente REST isolado em `agente-costalog-api.js`;
-
 - modo local de rascunho explicitamente identificado;
 - painel com login da API, gestão de sites, publicação e visualização de dispositivos/eventos;
 - modo API sem fallback para dados locais em caso de falha;
