@@ -1,0 +1,30 @@
+{
+  "name": "costalog-agent-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API corporativa do AGENTE COSTALOG",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:migrate": "node scripts/migrate.js",
+    "admin:create": "node scripts/create-admin.js",
+    "keys:generate": "node scripts/generate-policy-keys.js",
+    "check": "node --check src/server.js && node --check src/routes/auth.js && node --check src/routes/admin.js && node --check src/routes/agent.js && node --check scripts/smoke-mariadb.js",
+    "db:smoke": "node scripts/smoke-mariadb.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^4.6.7",
+    "mysql2": "^3.15.3"
+  }
+}

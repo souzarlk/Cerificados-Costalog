@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "policyId": "costalog-default",
+  "revision": 1,
+  "mode": "deny-by-default",
+  "onDeniedUse": {
+    "block": true,
+    "audit": true,
+    "notifyItImmediately": true
+  },
+  "certificateStorage": {
+    "location": "windows",
+    "privateKeyExportable": false,
+    "requireManagedCryptographicProvider": true
+  },
+  "browsers": [
+    "google-chrome",
+    "microsoft-edge"
+  ],
+  "allowedDestinations": [],
+  "notes": [
+    "Empty allowlist means deny all destinations.",
+    "Add exact hostnames only after testing the complete authentication flow.",
+    "This file is a policy template, not an enforcement mechanism."
+  ]
+}

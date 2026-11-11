@@ -1,0 +1,35 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      DB_HOST: mariadb
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+  mariadb:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?Configure MARIADB_ROOT_PASSWORD in the server environment}
+      MARIADB_DATABASE: ${DB_NAME:-costalog_agent}
+      MARIADB_USER: ${DB_USER:-costalog_agent}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD in the server environment}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+    volumes:
+      - costalog_mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    # Não expor a porta do banco na rede pública.
+volumes:
+  costalog_mariadb_data:

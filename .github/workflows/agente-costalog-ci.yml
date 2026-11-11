@@ -1,0 +1,116 @@
+name: AGENTE COSTALOG — CI
+
+on:
+  push:
+    branches: [security-foundation]
+  pull_request:
+    branches: [main, security-foundation]
+  workflow_dispatch:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: costalog_ci_root_password
+          MARIADB_USER: costalog_ci
+          MARIADB_PASSWORD: costalog_ci_password
+          MARIADB_DATABASE: costalog_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: costalog_ci
+      DB_PASSWORD: costalog_ci_password
+      DB_NAME: costalog_ci
+      DB_SSL: "false"
+      JWT_SECRET: ci-only-not-for-production-0123456789abcdef
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install API dependencies
+        working-directory: server
+        run: npm install
+      - name: Audit production dependencies
+        working-directory: server
+        run: npm audit --omit=dev --audit-level=high
+      - name: Apply database migrations against MariaDB 11.4
+        working-directory: server
+        run: npm run db:migrate
+      - name: MariaDB SQL integration smoke test
+        working-directory: server
+        run: npm run db:smoke
+      - name: Check API JavaScript
+        working-directory: server
+        run: npm run check
+      - name: Check API auxiliary modules
+        working-directory: server
+        run: |
+          node --check src/db.js
+          node --check src/security.js
+          node --check src/alerts.js
+          node --check src/middleware.js
+          node --check scripts/migrate.js
+          node --check scripts/create-admin.js
+          node --check scripts/generate-policy-keys.js
+      - name: Check portal JavaScript
+        run: |
+          node --check agente-costalog-config.js
+          node --check agente-costalog-api.js
+          node --check agente-costalog.js
+      - name: Check browser extension
+        run: |
+          node --check browser-extension/service-worker.js
+          python -m json.tool browser-extension/manifest.json > /dev/null
+  windows-agent:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Build Windows service
+        run: dotnet build windows-agent/Costalog.Agent.Service/Costalog.Agent.Service.csproj -c Release
+      - name: Build setup wizard
+        run: dotnet build windows-agent/Costalog.Agent.Setup/Costalog.Agent.Setup.csproj -c Release
+      - name: Build Native Messaging Host
+        run: dotnet build windows-agent/Costalog.Agent.NativeHost/Costalog.Agent.NativeHost.csproj -c Release
+      - name: Validate PowerShell scripts
+        shell: pwsh
+        run: |
+          $paths = @(
+            "windows-agent/Publish-Agent.ps1",
+            "windows-agent/Install-Agent.ps1",
+            "windows-agent/Uninstall-Agent.ps1",
+            "windows-agent/Package-Extension.ps1",
+            "server/Package-Portal.ps1"
+          )
+          foreach ($path in $paths) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error $_.Message }
+              throw "PowerShell parse failed: $path"
+            }
+          }
+      - name: Publish Windows installer package
+        shell: pwsh
+        run: .\windows-agent\Publish-Agent.ps1
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: agente-costalog-windows-x64
+          path: windows-agent/dist/
+          if-no-files-found: error
+          retention-days: 14
