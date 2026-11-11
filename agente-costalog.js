@@ -38,10 +38,10 @@ function renderDevices(){
  box.className="data-list";
  box.innerHTML=devices.map(d=>{
   const applied=Number(d.policyRevision||0);
-  const synced=applied>=currentPolicyRevision;
+  const synced=currentPolicyRevision>0&&applied>=currentPolicyRevision;
   const next=d.status==="active"?"revoked":"active";
   const label=next==="revoked"?"Revogar":"Reativar";
-  const policyLabel=synced?"POLÍTICA ATUALIZADA":"AGUARDANDO SINCRONIZAÇÃO";
+  const policyLabel=currentPolicyRevision===0?"SEM POLÍTICA PUBLICADA":(synced?"POLÍTICA ATUALIZADA":"AGUARDANDO SINCRONIZAÇÃO");
   return '<article class="data-row"><div><b>'+esc(d.deviceName||d.hostname||d.name||"Computador")+'</b><small>'+esc(d.username||"Usuário não informado")+' · '+esc(d.lastSeenAt?new Date(d.lastSeenAt).toLocaleString("pt-BR"):"Sem sincronização")+' · Política v'+applied+'</small></div><div class="device-row-actions"><span class="site-status">'+esc(d.status||"REGISTRADO")+'</span><span class="policy-status '+(synced?"synced":"pending")+'">'+policyLabel+'</span><button class="remove" data-device-id="'+esc(d.id)+'" data-next-status="'+next+'" type="button">'+label+'</button></div></article>';
  }).join("");
 }
@@ -99,7 +99,7 @@ async function refreshServer(){
   status("SERVIDOR COSTALOG CONECTADO","success");
   notice("<b>Conectado ao servidor:</b> os dados são carregados pela API central. O banco de dados não é acessado diretamente pelo navegador.","success");
   feedback("Dados atualizados a partir do servidor da empresa.");
-  renderSites();renderDevices();renderEvents();renderPolicy(policyData);editable(true);hideGate();
+  renderPolicy(policyData);renderSites();renderDevices();renderEvents();editable(true);hideGate();
  }catch(error){
   serverReady=false;sites=[];devices=[];events=[];currentPolicyRevision=0;status("FALHA DE AUTORIZAÇÃO / API","error");
   notice("<b>Falha ao validar a sessão ou carregar os dados:</b> "+esc(error.message)+" As alterações foram bloqueadas.","error");
