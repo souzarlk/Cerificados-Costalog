@@ -2,7 +2,7 @@ import pg from "pg";
 const { Pool } = pg;
 
 const connectionString = process.env.DATABASE_URL;
-if (!connectionString) throw new Error("DATABASE_URL não configurada. Configure o banco no servidor da empresa.");
+if (!connectionString || /REPLACE_WITH|CHANGE_ME|EXAMPLE/i.test(connectionString)) throw new Error("DATABASE_URL não configurada ou ainda contém valores de exemplo. Configure o banco no servidor da empresa.");
 
 export const pool = new Pool({
   connectionString,
