@@ -91,7 +91,7 @@ async function refreshServer(){
  }
  if(!API.hasAccessToken()){
   serverReady=false;sites=[];devices=[];events=[];currentPolicyRevision=0;status("API DISPONÍVEL · LOGIN PENDENTE","pending");
-  notice("<b>API respondendo:</b> entre com a conta administrativa do servidor. Nenhum dado será alterado sem autenticação.","warning");
+  notice("<b>API respondendo:</b> entre com o mesmo usuário e senha da Central de Notas Fiscais Costalog. Nenhum dado será alterado sem autenticação.","warning");
   renderSites();renderDevices();renderEvents();renderPolicy(null);return;
  }
  try{
