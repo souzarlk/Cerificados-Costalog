@@ -47,6 +47,9 @@ jobs:
       - name: Apply database migrations against MariaDB 11.4
         working-directory: server
         run: npm run db:migrate
+      - name: MariaDB SQL integration smoke test
+        working-directory: server
+        run: npm run db:smoke
       - name: Check API JavaScript
         working-directory: server
         run: npm run check
