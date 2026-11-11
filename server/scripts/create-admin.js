@@ -4,7 +4,7 @@ import { pool, query } from "../src/db.js";
 
 const email = String(process.env.BOOTSTRAP_ADMIN_EMAIL || "").trim().toLowerCase();
 const password = String(process.env.BOOTSTRAP_ADMIN_PASSWORD || "");
-if (!email || !password || password.length < 14) {
+if (!email || email.endsWith(".invalid") || !password || password.length < 14 || /CHANGE_ME|REPLACE_WITH|EXAMPLE/i.test(password)) {
   throw new Error("Defina BOOTSTRAP_ADMIN_EMAIL e uma BOOTSTRAP_ADMIN_PASSWORD com pelo menos 14 caracteres no ambiente do servidor.");
 }
 try {
