@@ -25,7 +25,7 @@ while (await ReadFullyAsync(input, prefix))
     }
     catch
     {
-        response = new { status = "invalid-request", ok = false };
+        response = new { status = "invalid-request", installMode = "certificate-and-web", allowedDestinations = Array.Empty<string>(), ok = false };
     }
 
     var responseBytes = JsonSerializer.SerializeToUtf8Bytes(response, new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -45,7 +45,7 @@ static object ReadLocalState()
         return new { status = "missing", installMode = "certificate-and-web", revision = 0, allowedDestinations = Array.Empty<string>() };
     using var doc = JsonDocument.Parse(File.ReadAllText(statePath));
     var state = doc.RootElement;
-    var mode = state.TryGetProperty("installMode", out var m) ? m.GetString() ?? "certificate" : "certificate";
+    var mode = state.TryGetProperty("installMode", out var m) ? m.GetString() ?? "certificate-and-web" : "certificate-and-web";
     var status = state.TryGetProperty("status", out var s) ? s.GetString() ?? "missing" : "missing";
     var revision = state.TryGetProperty("revision", out var r) ? r.GetInt32() : 0;
     var expiry = state.TryGetProperty("expiresAt", out var e) ? e.GetString() ?? "" : "";
