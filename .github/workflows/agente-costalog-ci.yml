@@ -84,7 +84,8 @@ jobs:
             "windows-agent/Publish-Agent.ps1",
             "windows-agent/Install-Agent.ps1",
             "windows-agent/Uninstall-Agent.ps1",
-            "windows-agent/Package-Extension.ps1"
+            "windows-agent/Package-Extension.ps1",
+            "server/Package-Portal.ps1"
           )
           foreach ($path in $paths) {
             $tokens = $null
