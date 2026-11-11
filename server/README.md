@@ -13,6 +13,20 @@ A camada HTTP não depende do banco diretamente. Nesta primeira versão foi impl
 
 ## Preparação no servidor
 
+### Opção recomendada: Docker Compose
+
+1. Copie a pasta `server/` para o servidor da empresa.
+2. Na pasta `server/`, copie `.env.example` para `.env` e substitua todos os valores `CHANGE_ME`/`REPLACE_*` por segredos aleatórios guardados pela TI.
+3. Confirme que `POSTGRES_PASSWORD` e a senha embutida em `DATABASE_URL` são iguais; para senhas com caracteres especiais, codifique-os para URL.
+4. Execute `docker compose up -d db` e aguarde o Postgres ficar saudável.
+5. Execute `docker compose build api`.
+6. Execute `docker compose run --rm api npm run db:migrate`.
+7. Execute `docker compose run --rm api npm run admin:create` para criar o primeiro administrador. Defina uma senha forte com pelo menos 14 caracteres.
+8. Execute `docker compose up -d api`.
+9. Configure IIS/Nginx/proxy corporativo para encaminhar HTTPS para `127.0.0.1:8080`; não exponha a porta 8080 nem a porta do PostgreSQL à internet.
+
+### Execução direta com Node.js
+
 1. Copie a pasta `server/` para o servidor da empresa.
 2. Crie um banco e usuário exclusivos para o AGENTE COSTALOG, com permissões mínimas.
 3. Copie `.env.example` para `.env` e preencha os valores reais fora do Git.
@@ -49,6 +63,8 @@ Veja `../api-contract/openapi.yaml` para o contrato completo.
 - `POST /api/v1/auth/login`, `GET /api/v1/auth/me`
 - `GET/POST /api/v1/admin/agent/sites`
 - `DELETE /api/v1/admin/agent/sites/{siteId}`
+- `GET /api/v1/admin/agent/devices`, `PATCH /api/v1/admin/agent/devices/{deviceId}/status`
+- `POST /api/v1/admin/agent/enrollment-tokens`
 - `GET /api/v1/admin/agent/devices`
 - `GET /api/v1/admin/agent/events?limit=50`
 - `GET /api/v1/admin/agent/policy`, `POST /api/v1/admin/agent/policy/publish`
