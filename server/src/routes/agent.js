@@ -90,7 +90,7 @@ router.post("/events", async (req,res,next) => {
       title:z.string().max(120).optional().default(""),
       message:z.string().max(1000).optional().default(""),
       domain:z.string().max(253).optional().default(""),
-      metadata:z.record(z.any()).optional().default({})
+      metadata:z.record(z.string(),z.unknown()).optional().default({})
     }).strict().parse(req.body);
     const result=await query(
       "INSERT INTO agent_events(device_id,event_type,title,message,domain,metadata) VALUES($1,$2,$3,$4,$5,$6::jsonb) RETURNING id,created_at AS \"createdAt\"",
