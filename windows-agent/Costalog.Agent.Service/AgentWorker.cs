@@ -110,7 +110,7 @@ public sealed class AgentWorker : BackgroundService
 
     private async Task SyncPolicyAsync(AgentConfig config, CancellationToken token)
     {
-        using var client = Client(config, true);
+        var client = Client(config, true);
         using var response = await client.GetAsync(Endpoint(config, "api/v1/agent/policy"), token);
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
