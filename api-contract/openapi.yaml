@@ -129,6 +129,35 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
 
   /admin/agent/sites/{siteId}:
+    patch:
+      tags: [Administration]
+      security:
+        - AdminBearer: []
+      summary: Ativa ou desativa um hostname e publica nova política automaticamente
+      parameters:
+        - name: siteId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: Estado atualizado e revisão da política publicada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Site"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
     delete:
       tags: [Administration]
       security:
