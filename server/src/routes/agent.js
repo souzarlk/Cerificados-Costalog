@@ -63,7 +63,7 @@ router.get("/policy", async (req,res,next) => {
     const payload={
       ...row.payload,
       device:{id:req.device.id,name:req.device.device_name,installMode:req.device.install_mode},
-      issuedAt:new Date().toISOString()
+      issuedAt:new Date().toISOString(),\n      expiresAt:new Date(Date.now()+Math.max(1,Number(process.env.POLICY_VALIDITY_HOURS||24))*60*60*1000).toISOString()
     };
     const signed=signPolicy(payload);
     await query("UPDATE agent_devices SET last_seen_at=NOW(),policy_revision=$2 WHERE id=$1",[req.device.id,row.revision]);
