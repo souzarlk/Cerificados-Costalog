@@ -10,8 +10,12 @@ $projects = @(
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
   throw "Instale o .NET 8 SDK antes de compilar o AGENTE COSTALOG."
 }
-if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
+# Preserve ExtensionPackage/private signing key; only refresh the compiled agent subfolders.
+foreach ($name in @("Service","Setup","NativeHost","BrowserExtension")) {
+  $target = Join-Path $dist $name
+  if (Test-Path $target) { Remove-Item $target -Recurse -Force }
+}
 
 foreach ($project in $projects) {
   $target = Join-Path $dist $project.Name
