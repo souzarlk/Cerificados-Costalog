@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { pool, query } from "../db.js";
 import { newOpaqueToken, hashToken, signPolicy } from "../security.js";
+import { sendSecurityAlert } from "../alerts.js";
 
 const router = Router();
 
@@ -95,6 +96,9 @@ router.post("/events", async (req,res,next) => {
       "INSERT INTO agent_events(device_id,event_type,title,message,domain,metadata) VALUES($1,$2,$3,$4,$5,$6::jsonb) RETURNING id,created_at AS \"createdAt\"",
       [req.device.id,input.eventType,input.title,input.message,input.domain,JSON.stringify(input.metadata)]
     );
+    if (input.eventType === "browser_navigation_blocked") {
+      await sendSecurityAlert({ ...input, deviceName: req.device.device_name, createdAt: result.rows[0].createdAt });
+    }
     res.status(201).json(result.rows[0]);
   } catch(e) { next(e); }
 });
