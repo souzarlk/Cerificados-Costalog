@@ -33,6 +33,7 @@ jobs:
       DB_NAME: costalog_ci
       DB_SSL: "false"
       JWT_SECRET: ci-only-not-for-production-0123456789abcdef
+      CENTRAL_ADMIN_AUTH_SECRET: ci-central-admin-auth-secret-with-at-least-32-bytes
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,6 +51,9 @@ jobs:
       - name: MariaDB SQL integration smoke test
         working-directory: server
         run: npm run db:smoke
+      - name: Test Central Fiscal shared login
+        working-directory: server
+        run: npm test
       - name: Check API JavaScript
         working-directory: server
         run: npm run check
