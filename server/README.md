@@ -54,7 +54,7 @@ Execute `npm run keys:generate` em ambiente seguro. Guarde `POLICY_SIGNING_PRIVA
 
 ## Autenticação
 
-A primeira versão disponibiliza login administrativo por e-mail/senha, com hash bcrypt e JWT de curta duração. Credenciais são criadas por comando administrativo, nunca pelo front-end. O login corporativo SSO/OIDC poderá substituir esse mecanismo sem alterar os endpoints de negócio. No painel web, o access token permanece apenas em memória. Ao cadastrar ou remover um site, a API cria automaticamente uma nova revisão assinada na mesma transação; os agentes buscam a revisão na sincronização seguinte (intervalo padrão de 45 segundos).
+A primeira versão disponibiliza login administrativo por e-mail/senha, com hash bcrypt e JWT de curta duração. Credenciais são criadas por comando administrativo, nunca pelo front-end. O login corporativo SSO/OIDC poderá substituir esse mecanismo sem alterar os endpoints de negócio. No painel web, o access token permanece apenas em memória. Ao cadastrar, remover, ativar ou desativar um site, a API cria automaticamente uma nova revisão assinada na mesma transação; os agentes buscam a revisão na sincronização seguinte (intervalo padrão de 45 segundos).
 
 O cadastro de dispositivos usa token de enrollment de uso único, criado em `POST /api/v1/admin/agent/enrollment-tokens`. O token do dispositivo é exibido somente uma vez e deverá ser protegido localmente pelo Windows Agent usando DPAPI e ACL.
 
@@ -65,10 +65,9 @@ Veja `../api-contract/openapi.yaml` para o contrato completo.
 - `GET /api/v1/health`
 - `POST /api/v1/auth/login`, `GET /api/v1/auth/me`
 - `GET/POST /api/v1/admin/agent/sites`
-- `DELETE /api/v1/admin/agent/sites/{siteId}`
+- `PATCH/DELETE /api/v1/admin/agent/sites/{siteId}`
 - `GET /api/v1/admin/agent/devices`
 - `PATCH /api/v1/admin/agent/devices/{deviceId}/status`
-- `POST /api/v1/admin/agent/enrollment-tokens`
 - `GET /api/v1/admin/agent/events?limit=50`
 - `GET /api/v1/admin/agent/policy`, `POST /api/v1/admin/agent/policy/publish`
 - `POST /api/v1/admin/agent/enrollment-tokens`
@@ -77,7 +76,7 @@ Veja `../api-contract/openapi.yaml` para o contrato completo.
 
 ## Alertas imediatos à TI
 
-Configure SECURITY_ALERT_WEBHOOK_URL com um endpoint HTTPS de webhook aprovado pela empresa. Quando um agente reportar browser_navigation_blocked, o backend grava o evento e envia um POST JSON ao webhook. Se não estiver configurado, o registro permanece no banco, mas não há notificação externa imediata. Mantenha essa URL somente no ambiente do servidor.
+Configure SECURITY_ALERT_WEBHOOK_URL com um endpoint HTTPS de webhook aprovado pela empresa. Quando um agente reportar `browser_navigation_blocked`, o backend grava o evento e envia um POST JSON ao webhook. O agente sincroniza a fila local em ciclos de aproximadamente 45 segundos; portanto, a notificação depende desse ciclo e da disponibilidade do webhook. Se não estiver configurado, o registro permanece no banco, mas não há notificação externa imediata. Mantenha essa URL somente no ambiente do servidor.
 
 ## Importante
 
