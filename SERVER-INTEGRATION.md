@@ -54,7 +54,7 @@ A API deve ser a única camada que conhece detalhes do banco. As telas e o agent
 - O endpoint `/api/v1/health` pode ser público, mas deve retornar apenas estado operacional sem detalhes de infraestrutura.
 - Não habilitar acesso remoto ao banco para os navegadores.
 
-O cliente oferece `window.CostalogAgentAPI.setAccessToken(token)` para receber o token após a futura integração OIDC. A tela atual ainda não implementa o fluxo de login corporativo; sem token válido, o painel não lê nem grava dados administrativos na API.
+O cliente oferece `window.CostalogAgentAPI.setAccessToken(token)` para receber o token após a futura integração OIDC. Depois de definir o token, o callback de autenticação deve disparar `window.dispatchEvent(new Event('costalog:auth-changed'))` para atualizar o painel. No logout, chamar `window.CostalogAgentAPI.clearAccessToken()`. A tela atual ainda não implementa o fluxo de login corporativo; sem token válido, o painel não lê nem grava dados administrativos na API.
 
 ## Contrato REST esperado
 
@@ -177,7 +177,7 @@ As credenciais do banco devem ficar em secret manager/variáveis protegidas do s
 ## Estado desta entrega
 
 Implementado no repositório:
-- configuração central do endereço da API;
+- configuração central do endereço da API em `agente-costalog-config.js`;\n- cliente REST isolado em `agente-costalog-api.js`;
 - cliente REST separado da interface;
 - modo local de rascunho explicitamente identificado;
 - modo API sem fallback para dados locais em caso de falha;
