@@ -21,7 +21,7 @@ export function requireAdminWrite(req, res, next) {
 }
 export function errorHandler(err, req, res, next) {
   if (err && err.name === "ZodError") return res.status(400).json({ error: "validation_error", message: "Os dados enviados são inválidos.", issues: err.issues });
-  if (err && err.code === "23505") return res.status(409).json({ error: "conflict", message: "Registro duplicado." });
+  if (err && ["23505","ER_DUP_ENTRY"].includes(err.code)) return res.status(409).json({ error: "conflict", message: "Registro duplicado." });
   console.error("API error", { method: req.method, path: req.path, message: err.message });
   if (res.headersSent) return next(err);
   res.status(err.status || 500).json({
