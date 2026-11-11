@@ -73,7 +73,6 @@
     deleteSite: id => request("/admin/agent/sites/" + encodeURIComponent(id), { method: "DELETE" }),
     listDevices: () => request("/admin/agent/devices"),
     listEvents: limit => request("/admin/agent/events?limit=" + encodeURIComponent(limit || 50)),
-    getSummary: () => request("/admin/agent/summary"),
     getPolicy: () => request("/admin/agent/policy"),
     publishPolicy: () => request("/admin/agent/policy/publish", { method: "POST", body: {} })
   };
