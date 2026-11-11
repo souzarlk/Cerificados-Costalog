@@ -1,0 +1,50 @@
+name: AGENTE COSTALOG — CI
+
+on:
+  push:
+    branches: [security-foundation]
+  pull_request:
+    branches: [main, security-foundation]
+  workflow_dispatch:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install API dependencies
+        working-directory: server
+        run: npm install
+      - name: Check API JavaScript
+        working-directory: server
+        run: npm run check
+      - name: Check API auxiliary modules
+        working-directory: server
+        run: |
+          node --check src/db.js
+          node --check src/security.js
+          node --check src/alerts.js
+          node --check src/middleware.js
+          node --check scripts/migrate.js
+          node --check scripts/create-admin.js
+          node --check scripts/generate-policy-keys.js
+      - name: Check browser extension
+        run: |
+          node --check browser-extension/service-worker.js
+          python -m json.tool browser-extension/manifest.json > /dev/null
+  windows-agent:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Build Windows service
+        run: dotnet build windows-agent/Costalog.Agent.Service/Costalog.Agent.Service.csproj -c Release
+      - name: Build setup wizard
+        run: dotnet build windows-agent/Costalog.Agent.Setup/Costalog.Agent.Setup.csproj -c Release
+      - name: Build Native Messaging Host
+        run: dotnet build windows-agent/Costalog.Agent.NativeHost/Costalog.Agent.NativeHost.csproj -c Release
