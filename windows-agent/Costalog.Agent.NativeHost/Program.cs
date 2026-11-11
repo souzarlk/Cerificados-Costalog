@@ -21,7 +21,7 @@ while (await ReadFullyAsync(input, prefix))
         var type = root.TryGetProperty("type", out var property) ? property.GetString() : "";
         if (type == "get-policy") response = ReadLocalState();
         else if (type == "report-blocked") response = WriteBlockedEvent(root);
-        else response = new { status = "unsupported-request", ok = false };
+        else response = new { status = "unsupported-request", installMode = "certificate-and-web", ok = false };
     }
     catch
     {
@@ -42,7 +42,7 @@ static object ReadLocalState()
     var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Costalog", "Agent");
     var statePath = Path.Combine(root, "agent-public-state.json");
     if (!File.Exists(statePath))
-        return new { status = "missing", installMode = "certificate", revision = 0, allowedDestinations = Array.Empty<string>() };
+        return new { status = "missing", installMode = "certificate-and-web", revision = 0, allowedDestinations = Array.Empty<string>() };
     using var doc = JsonDocument.Parse(File.ReadAllText(statePath));
     var state = doc.RootElement;
     var mode = state.TryGetProperty("installMode", out var m) ? m.GetString() ?? "certificate" : "certificate";
