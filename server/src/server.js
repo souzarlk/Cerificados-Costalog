@@ -22,7 +22,7 @@ app.use(cors({
     if(!origin||allowedOrigins.includes(origin))return callback(null,true);
     const error = new Error("Origem não autorizada pelo CORS."); error.status = 403; return callback(error);
   },
-  methods:["GET","POST","DELETE","OPTIONS"],
+  methods:["GET","POST","PATCH","DELETE","OPTIONS"],
   allowedHeaders:["Authorization","Content-Type","X-Request-Id"],
   credentials:false,
   maxAge:600
