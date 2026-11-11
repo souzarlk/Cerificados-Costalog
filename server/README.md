@@ -1,0 +1,61 @@
+# AGENTE COSTALOG — API corporativa
+
+API para hospedar no servidor da Costalog. O portal web e o agente Windows consomem esta API; **somente o servidor acessa o banco**.
+
+## Requisitos
+
+- Node.js 20 ou superior (recomendado Node.js 22 LTS).
+- PostgreSQL 14 ou superior nesta primeira implementação.
+- HTTPS via proxy reverso (IIS, Nginx ou infraestrutura corporativa).
+- Uma origem web autorizada configurada em `ALLOWED_ORIGINS`.
+
+A camada HTTP não depende do banco diretamente. Nesta primeira versão foi implementado um adaptador PostgreSQL em `src/db.js`. Caso a infraestrutura da empresa utilize SQL Server ou outro banco, a substituição fica concentrada no adaptador e nas migrações SQL; o contrato REST e as telas não precisam mudar. Não será necessário expor o banco à internet.
+
+## Preparação no servidor
+
+1. Copie a pasta `server/` para o servidor da empresa.
+2. Crie um banco e usuário exclusivos para o AGENTE COSTALOG, com permissões mínimas.
+3. Copie `.env.example` para `.env` e preencha os valores reais fora do Git.
+4. Configure `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS` e as chaves de assinatura.
+5. Instale dependências com `npm ci` (ou `npm install` na primeira instalação).
+6. Execute `npm run db:migrate`.
+7. Execute `npm run admin:create` para criar o primeiro administrador. Use senha forte e não a reutilize.
+8. Inicie com `npm start` e coloque um proxy HTTPS corporativo na frente.
+9. Restrinja a porta do banco à rede/host da API. O banco não deve ser publicado.
+
+## Chaves de assinatura
+
+Execute `npm run keys:generate` em ambiente seguro. Guarde `POLICY_SIGNING_PRIVATE_KEY_B64` em cofre de segredos do servidor. A chave pública correspondente será configurada no agente Windows. **Nunca versione a chave privada.** Planeje rotação com identificador de chave e período de sobreposição.
+
+## Variáveis obrigatórias
+
+- `DATABASE_URL`: string de conexão PostgreSQL no servidor.
+- `JWT_SECRET`: segredo aleatório com no mínimo 32 caracteres.
+- `POLICY_SIGNING_PRIVATE_KEY_B64`: chave RSA privada em PEM codificada em Base64.
+- `POLICY_SIGNING_KEY_ID`: identificador público da chave.
+- `ALLOWED_ORIGINS`: origens exatas do portal.
+
+## Autenticação
+
+A primeira versão disponibiliza login administrativo por e-mail/senha, com hash bcrypt e JWT de curta duração. Credenciais são criadas por comando administrativo, nunca pelo front-end. O login corporativo SSO/OIDC pode substituir esse mecanismo sem alterar os endpoints de negócio. No painel web, mantenha o access token apenas em memória.
+
+O cadastro de dispositivos usa token de enrollment de uso único, criado em `POST /api/v1/admin/agent/enrollment-tokens`. O token do dispositivo é exibido somente uma vez e deverá ser protegido localmente pelo Windows Agent usando DPAPI e ACL.
+
+## Endpoints
+
+Veja `../api-contract/openapi.yaml` para o contrato completo.
+
+- `GET /api/v1/health`
+- `POST /api/v1/auth/login`, `GET /api/v1/auth/me`
+- `GET/POST /api/v1/admin/agent/sites`
+- `DELETE /api/v1/admin/agent/sites/{siteId}`
+- `GET /api/v1/admin/agent/devices`
+- `GET /api/v1/admin/agent/events?limit=50`
+- `GET /api/v1/admin/agent/policy`, `POST /api/v1/admin/agent/policy/publish`
+- `POST /api/v1/admin/agent/enrollment-tokens`
+- `POST /api/v1/agent/enroll`, `POST /api/v1/agent/heartbeat`
+- `GET /api/v1/agent/policy`, `POST /api/v1/agent/events`
+
+## Importante
+
+O backend registra e distribui políticas assinadas. Isso, sozinho, ainda não garante controle total de cada forma de uso de um certificado A1. O enforcement de TLS cliente, assinatura documental e upload de PFX tem fluxos distintos e precisa ser homologado nos portais reais. O modo de navegação restrita depende também da extensão de navegador gerenciada pela TI.
