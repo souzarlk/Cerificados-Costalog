@@ -65,7 +65,8 @@ Prefixo padrão: `/api/v1`. Todos os corpos e respostas são JSON.
 | GET | `/health` | Verificar disponibilidade sem dados sensíveis |
 | GET | `/admin/agent/sites` | Listar domínios |
 | POST | `/admin/agent/sites` | Cadastrar domínio |
-| PATCH | `/admin/agent/sites/{siteId}` | Ativar/desativar domínio e publicar nova política automaticamente |\n| DELETE | `/admin/agent/sites/{siteId}` | Remover domínio e publicar nova política automaticamente |
+| PATCH | `/admin/agent/sites/{siteId}` | Ativar/desativar domínio e publicar nova política automaticamente |
+| DELETE | `/admin/agent/sites/{siteId}` | Remover domínio e publicar nova política automaticamente |
 | GET | `/admin/agent/devices` | Listar instalações do agente |
 | GET | `/admin/agent/events?limit=50` | Consultar auditoria |
 | GET | `/admin/agent/policy` | Consultar revisão e estado da política |
