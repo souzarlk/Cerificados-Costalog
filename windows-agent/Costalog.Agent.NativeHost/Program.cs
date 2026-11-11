@@ -79,7 +79,9 @@ static object WriteBlockedEvent(JsonElement request)
         createdAt = DateTimeOffset.UtcNow.ToString("O")
     };
     var file = Path.Combine(root, Guid.NewGuid().ToString("N") + ".json");
-    File.WriteAllText(file, JsonSerializer.Serialize(item, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+    var temporary = file + ".tmp";
+    File.WriteAllText(temporary, JsonSerializer.Serialize(item, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+    File.Move(temporary, file);
     return new { ok = true };
 }
 
