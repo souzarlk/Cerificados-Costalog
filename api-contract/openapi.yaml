@@ -31,43 +31,8 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
 
-  /auth/login:
-    post:
-      tags: [Authentication]
-      security: []
-      summary: Autentica administrador do painel
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email: { type: string, format: email, maxLength: 254 }
-                password: { type: string, minLength: 1, maxLength: 256 }
-      responses:
-        "200":
-          description: Sessão administrativa criada
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [accessToken, tokenType, expiresIn, user]
-                properties:
-                  accessToken: { type: string }
-                  tokenType: { type: string, const: Bearer }
-                  expiresIn: { type: string }
-                  user:
-                    type: object
-                    properties:
-                      id: { type: string, format: uuid }
-                      email: { type: string, format: email }
-                      role: { type: string, enum: [admin, auditor] }
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "429":
-          description: Muitas tentativas de login
+  # A autenticação é centralizada na Central de Notas Fiscais Costalog.
+  # O painel obtém o token em /api/auth/login da Central e o envia como Bearer.
 
   /auth/me:
     get:
