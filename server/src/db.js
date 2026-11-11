@@ -11,7 +11,7 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error("DB_PORT inválida.");
 }
 
-const pool = mysql.createPool({
+const rawPool = mysql.createPool({
   host: process.env.DB_HOST,
   port,
   user: process.env.DB_USER,
@@ -87,16 +87,14 @@ class MariaConnection {
 
 export const pool = {
   async connect() {
-    const connection = await poolInstance.getConnection();
+    const connection = await rawPool.getConnection();
     return new MariaConnection(connection);
   },
-  async end() { await poolInstance.end(); }
+  async end() { await rawPool.end(); }
 };
 
-const poolInstance = poolInstanceFactory();
-function poolInstanceFactory() { return pool; }
 
 export async function query(sql, params = []) {
-  const [result] = await poolInstance.execute(normalizeSql(sql), params);
+  const [result] = await rawPool.execute(normalizeSql(sql), params);
   return wrapResult(result);
 }
