@@ -109,7 +109,7 @@ router.post("/enrollment-tokens", requireAdminWrite, async (req, res, next) => {
   try {
     const token = newOpaqueToken(32);
     const expiresMinutes = Math.min(1440,Math.max(5,Number(req.body?.expiresMinutes)||60));
-    await query("INSERT INTO enrollment_tokens(token_hash,created_by,expires_at) VALUES($1,$2,NOW()+($3 * INTERVAL '1 minute'))",
+    await query("INSERT INTO enrollment_tokens(token_hash,created_by,expires_at) VALUES($1,$2,NOW()+($3::int * INTERVAL '1 minute'))",
       [hashToken(token),req.admin.id,expiresMinutes]);
     await query("INSERT INTO agent_events(event_type,title,message,metadata) VALUES($1,$2,$3,$4::jsonb)",
       ["admin_enrollment_token_created","Token de instalação gerado",req.admin.email,JSON.stringify({adminId:req.admin.id,expiresMinutes})]);
