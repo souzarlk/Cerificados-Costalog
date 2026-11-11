@@ -51,6 +51,24 @@ jobs:
         run: dotnet build windows-agent/Costalog.Agent.Setup/Costalog.Agent.Setup.csproj -c Release
       - name: Build Native Messaging Host
         run: dotnet build windows-agent/Costalog.Agent.NativeHost/Costalog.Agent.NativeHost.csproj -c Release
+      - name: Validate PowerShell scripts
+        shell: pwsh
+        run: |
+          $paths = @(
+            "windows-agent/Publish-Agent.ps1",
+            "windows-agent/Install-Agent.ps1",
+            "windows-agent/Uninstall-Agent.ps1",
+            "windows-agent/Package-Extension.ps1"
+          )
+          foreach ($path in $paths) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error $_.Message }
+              throw "PowerShell parse failed: $path"
+            }
+          }
       - name: Publish Windows installer package
         shell: pwsh
         run: .\windows-agent\Publish-Agent.ps1
